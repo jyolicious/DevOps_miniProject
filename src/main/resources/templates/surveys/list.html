@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Survey Records</title>
+</head>
+
+<body>
+
+    <h1>Survey Records</h1>
+    <a href="/surveys/create">Create New Survey</a>
+
+<br><br>
+
+    <p th:if="${#lists.isEmpty(surveys)}">
+        No survey records found.
+    </p>
+
+    <table border="1" th:if="${not #lists.isEmpty(surveys)}">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Location</th>
+                <th>Health Condition</th>
+                <th>Survey Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tbody>
+    <tr th:each="survey : ${surveys}">
+
+        <td th:text="${survey.id}"></td>
+
+        <td th:text="${survey.name}"></td>
+
+        <td th:text="${survey.age}"></td>
+
+        <td th:text="${survey.gender}"></td>
+
+        <td th:text="${survey.location}"></td>
+
+        <td th:text="${survey.healthCondition}"></td>
+
+        <td th:text="${survey.surveyDate}"></td>
+
+        <td th:text="${survey.status}"></td>
+
+        <td>
+            <a th:href="@{/surveys/{id}(id=${survey.id})}">
+                View
+            </a>
+        </td>
+
+    </tr>
+</tbody>
+
+    </table>
+
+    <br>
+
+    <a href="/">Back to Home</a>
+
+</body>
+
+</html>

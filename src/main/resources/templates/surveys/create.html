@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Survey</title>
+</head>
+
+<body>
+
+<h1>Create Community Health Survey</h1>
+
+<form th:action="@{/surveys}" th:object="${survey}" method="post">
+
+    <label>Name:</label>
+    <input type="text" th:field="*{name}" required>
+    <br><br>
+
+    <label>Age:</label>
+    <input type="number" th:field="*{age}" required>
+    <br><br>
+
+    <label>Gender:</label>
+    <select th:field="*{gender}" required>
+        <option value="">Select</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+    </select>
+    <br><br>
+
+    <label>Location:</label>
+    <input type="text" th:field="*{location}" required>
+    <br><br>
+
+    <label>Health Condition:</label>
+    <input type="text" th:field="*{healthCondition}" required>
+    <br><br>
+
+    <label>Survey Date:</label>
+    <input type="date" th:field="*{surveyDate}" required>
+    <br><br>
+
+    <button type="submit">Create Survey</button>
+
+</form>
+
+<br>
+
+<a href="/surveys">Back to Surveys</a>
+
+</body>
+
+</html>

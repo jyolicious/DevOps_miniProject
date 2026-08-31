@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Survey Details</title>
+</head>
+
+<body>
+
+    <h1>Survey Details</h1>
+
+    <p>
+        <strong>ID:</strong>
+        <span th:text="${survey.id}"></span>
+    </p>
+
+    <p>
+        <strong>Name:</strong>
+        <span th:text="${survey.name}"></span>
+    </p>
+
+    <p>
+        <strong>Age:</strong>
+        <span th:text="${survey.age}"></span>
+    </p>
+
+    <p>
+        <strong>Gender:</strong>
+        <span th:text="${survey.gender}"></span>
+    </p>
+
+    <p>
+        <strong>Location:</strong>
+        <span th:text="${survey.location}"></span>
+    </p>
+
+    <p>
+        <strong>Health Condition:</strong>
+        <span th:text="${survey.healthCondition}"></span>
+    </p>
+
+    <p>
+        <strong>Survey Date:</strong>
+        <span th:text="${survey.surveyDate}"></span>
+    </p>
+
+    <p>
+        <strong>Status:</strong>
+        <span th:text="${survey.status}"></span>
+    </p>
+
+    <a href="/surveys">Back to Surveys</a>
+
+</body>
+
+</html>
