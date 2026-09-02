@@ -1,58 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Survey Details</title>
 </head>
 
 <body>
 
-    <h1>Survey Details</h1>
+<h1>Survey Details</h1>
 
-    <p>
-        <strong>ID:</strong>
-        <span th:text="${survey.id}"></span>
-    </p>
+<table border="1"
+       cellpadding="8">
 
-    <p>
-        <strong>Name:</strong>
-        <span th:text="${survey.name}"></span>
-    </p>
+    <tr>
+        <th>ID</th>
+        <td th:text="${survey.id}"></td>
+    </tr>
 
-    <p>
-        <strong>Age:</strong>
-        <span th:text="${survey.age}"></span>
-    </p>
+    <tr>
+        <th>Name</th>
+        <td th:text="${survey.name}"></td>
+    </tr>
 
-    <p>
-        <strong>Gender:</strong>
-        <span th:text="${survey.gender}"></span>
-    </p>
+    <tr>
+        <th>Age</th>
+        <td th:text="${survey.age}"></td>
+    </tr>
 
-    <p>
-        <strong>Location:</strong>
-        <span th:text="${survey.location}"></span>
-    </p>
+    <tr>
+        <th>Gender</th>
+        <td th:text="${survey.gender}"></td>
+    </tr>
 
-    <p>
-        <strong>Health Condition:</strong>
-        <span th:text="${survey.healthCondition}"></span>
-    </p>
+    <tr>
+        <th>Location</th>
+        <td th:text="${survey.location}"></td>
+    </tr>
 
-    <p>
-        <strong>Survey Date:</strong>
-        <span th:text="${survey.surveyDate}"></span>
-    </p>
+    <tr>
+        <th>Health Condition</th>
+        <td th:text="${survey.healthCondition}"></td>
+    </tr>
 
-    <p>
-        <strong>Status:</strong>
-        <span th:text="${survey.status}"></span>
-    </p>
+    <tr>
+        <th>Survey Date</th>
+        <td th:text="${survey.surveyDate}"></td>
+    </tr>
 
-    <a href="/surveys">Back to Surveys</a>
+    <tr>
+        <th>Status</th>
+        <td th:text="${survey.status}"></td>
+    </tr>
+
+</table>
+
+<br>
+
+<a th:href="@{/surveys/{id}/edit(id=${survey.id})}">
+    Edit Survey
+</a>
+
+<br><br>
+
+<a href="/surveys">
+    Back to Surveys
+</a>
 
 </body>
 

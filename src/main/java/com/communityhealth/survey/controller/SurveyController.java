@@ -3,12 +3,12 @@ package com.communityhealth.survey.controller;
 import com.communityhealth.survey.entity.Survey;
 import com.communityhealth.survey.service.SurveyService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 
 @Controller
 public class SurveyController {
@@ -19,22 +19,29 @@ public class SurveyController {
         this.surveyService = surveyService;
     }
 
+    // HOME
     @GetMapping("/")
     public String home() {
         return "home";
     }
 
+    // LIST / SEARCH
     @GetMapping("/surveys")
-    public String getAllSurveys(Model model) {
+    public String getAllSurveys(
+            @RequestParam(required = false) String query,
+            Model model) {
 
         model.addAttribute(
                 "surveys",
-                surveyService.getAllSurveys()
+                surveyService.searchSurveys(query)
         );
+
+        model.addAttribute("query", query);
 
         return "surveys/list";
     }
 
+    // VIEW ONE
     @GetMapping("/surveys/{id}")
     public String getSurvey(
             @PathVariable Long id,
@@ -47,19 +54,56 @@ public class SurveyController {
         return "surveys/view";
     }
 
+    // SHOW CREATE FORM
     @GetMapping("/surveys/create")
-public String showCreateForm(Model model) {
+    public String showCreateForm(Model model) {
 
-    model.addAttribute("survey", new Survey());
+        model.addAttribute("survey", new Survey());
 
-    return "surveys/create";
-}
+        return "surveys/create";
+    }
 
-@PostMapping("/surveys")
-public String createSurvey(@ModelAttribute Survey survey) {
+    // CREATE
+    @PostMapping("/surveys")
+    public String createSurvey(
+            @Valid @ModelAttribute("survey") Survey survey,
+            BindingResult bindingResult) {
 
-    surveyService.createSurvey(survey);
+        if (bindingResult.hasErrors()) {
+            return "surveys/create";
+        }
 
-    return "redirect:/surveys";
-}
+        surveyService.createSurvey(survey);
+
+        return "redirect:/surveys";
+    }
+
+    // SHOW UPDATE FORM
+    @GetMapping("/surveys/{id}/edit")
+    public String showEditForm(
+            @PathVariable Long id,
+            Model model) {
+
+        Survey survey = surveyService.getSurveyById(id);
+
+        model.addAttribute("survey", survey);
+
+        return "surveys/edit";
+    }
+
+    // UPDATE
+    @PostMapping("/surveys/{id}/update")
+    public String updateSurvey(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("survey") Survey survey,
+            BindingResult bindingResult) {
+
+        if (bindingResult.hasErrors()) {
+            return "surveys/edit";
+        }
+
+        surveyService.updateSurvey(id, survey);
+
+        return "redirect:/surveys/" + id;
+    }
 }

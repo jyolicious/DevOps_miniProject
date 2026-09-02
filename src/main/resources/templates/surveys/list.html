@@ -1,43 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Survey Records</title>
 </head>
 
 <body>
 
-    <h1>Survey Records</h1>
-    <a href="/surveys/create">Create New Survey</a>
+<h1>Community Health Survey Records</h1>
+
+<a href="/surveys/create">
+    Create New Survey
+</a>
 
 <br><br>
 
-    <p th:if="${#lists.isEmpty(surveys)}">
-        No survey records found.
-    </p>
+<form method="get"
+      action="/surveys">
 
-    <table border="1" th:if="${not #lists.isEmpty(surveys)}">
+    <input type="text"
+           name="query"
+           th:value="${query}"
+           placeholder="Search by ID, name, location or condition">
 
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Gender</th>
-                <th>Location</th>
-                <th>Health Condition</th>
-                <th>Survey Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
+    <button type="submit">
+        Search
+    </button>
 
-        <tbody>
+    <a href="/surveys">
+        Clear
+    </a>
 
-            <tbody>
+</form>
+
+<br>
+
+<p th:if="${#lists.isEmpty(surveys)}">
+    No records found.
+</p>
+
+<table border="1"
+       cellpadding="8"
+       th:if="${not #lists.isEmpty(surveys)}">
+
+    <thead>
+
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Gender</th>
+        <th>Location</th>
+        <th>Health Condition</th>
+        <th>Survey Date</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    </thead>
+
+    <tbody>
+
     <tr th:each="survey : ${surveys}">
 
         <td th:text="${survey.id}"></td>
@@ -57,19 +83,28 @@
         <td th:text="${survey.status}"></td>
 
         <td>
+
             <a th:href="@{/surveys/{id}(id=${survey.id})}">
                 View
             </a>
+
+            |
+
+            <a th:href="@{/surveys/{id}/edit(id=${survey.id})}">
+                Edit
+            </a>
+
         </td>
 
     </tr>
-</tbody>
 
-    </table>
+    </tbody>
 
-    <br>
+</table>
 
-    <a href="/">Back to Home</a>
+<br>
+
+<a href="/">Back to Home</a>
 
 </body>
 
