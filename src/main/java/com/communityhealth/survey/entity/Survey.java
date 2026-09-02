@@ -51,6 +51,9 @@ public class Survey {
     @Column(name = "status_changed_by")
     private String statusChangedBy;
 
+    @Column(name = "creator")
+    private String creator; 
+
     public Long getId() {
         return id;
     }
@@ -121,5 +124,13 @@ public class Survey {
 
     public void setStatusChangedBy(String statusChangedBy) {
     this.statusChangedBy = statusChangedBy;
+}
+
+public String getCreator() {
+    return creator;
+}
+
+public void setCreator(String creator) {
+    this.creator = creator;
 }
 }

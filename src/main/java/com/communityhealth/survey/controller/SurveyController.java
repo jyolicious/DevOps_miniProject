@@ -6,12 +6,11 @@ import com.communityhealth.survey.service.SurveyService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import com.communityhealth.survey.enums.SurveyStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -23,13 +22,11 @@ public class SurveyController {
         this.surveyService = surveyService;
     }
 
-    // HOME
     @GetMapping("/")
     public String home() {
         return "home";
     }
 
-    // LIST / SEARCH
     @GetMapping("/surveys")
     public String getAllSurveys(
             @RequestParam(required = false) String query,
@@ -45,7 +42,6 @@ public class SurveyController {
         return "surveys/list";
     }
 
-    // VIEW ONE
     @GetMapping("/surveys/{id}")
     public String getSurvey(
             @PathVariable Long id,
@@ -58,7 +54,6 @@ public class SurveyController {
         return "surveys/view";
     }
 
-    // SHOW CREATE FORM
     @GetMapping("/surveys/create")
     public String showCreateForm(Model model) {
 
@@ -67,22 +62,24 @@ public class SurveyController {
         return "surveys/create";
     }
 
-    // CREATE
     @PostMapping("/surveys")
     public String createSurvey(
             @Valid @ModelAttribute("survey") Survey survey,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            Authentication authentication) {
 
         if (bindingResult.hasErrors()) {
             return "surveys/create";
         }
 
-        surveyService.createSurvey(survey);
+        surveyService.createSurvey(
+                survey,
+                authentication.getName()
+        );
 
         return "redirect:/surveys";
     }
 
-    // SHOW UPDATE FORM
     @GetMapping("/surveys/{id}/edit")
     public String showEditForm(
             @PathVariable Long id,
@@ -95,7 +92,6 @@ public class SurveyController {
         return "surveys/edit";
     }
 
-    // UPDATE
     @PostMapping("/surveys/{id}/update")
     public String updateSurvey(
             @PathVariable Long id,
@@ -112,55 +108,64 @@ public class SurveyController {
     }
 
     @PostMapping("/surveys/{id}/status")
-public String updateStatus(
-        @PathVariable Long id,
-        @RequestParam SurveyStatus status,
-        RedirectAttributes redirectAttributes) {
+    public String updateStatus(
+            @PathVariable Long id,
+            @RequestParam SurveyStatus status,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
 
-    try {
-        surveyService.updateStatus(id, status, "ADMIN");
-        redirectAttributes.addFlashAttribute(
-                "successMessage",
-                "Survey status updated successfully."
-        );
-    } catch (IllegalStateException e) {
-        redirectAttributes.addFlashAttribute(
-                "errorMessage",
-                e.getMessage()
-        );
+        try {
+
+            surveyService.updateStatus(
+                    id,
+                    status,
+                    authentication.getName()
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Survey status updated successfully."
+            );
+
+        } catch (IllegalStateException e) {
+
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    e.getMessage()
+            );
+        }
+
+        return "redirect:/surveys/" + id;
     }
 
-    return "redirect:/surveys/" + id;
-}
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
 
-@GetMapping("/dashboard")
-public String dashboard(Model model) {
+        model.addAttribute(
+                "totalCount",
+                surveyService.getTotalSurveyCount()
+        );
 
-    model.addAttribute(
-            "totalCount",
-            surveyService.getTotalSurveyCount()
-    );
+        model.addAttribute(
+                "draftCount",
+                surveyService.getDraftCount()
+        );
 
-    model.addAttribute(
-            "draftCount",
-            surveyService.getDraftCount()
-    );
+        model.addAttribute(
+                "submittedCount",
+                surveyService.getSubmittedCount()
+        );
 
-    model.addAttribute(
-            "submittedCount",
-            surveyService.getSubmittedCount()
-    );
+        model.addAttribute(
+                "verifiedCount",
+                surveyService.getVerifiedCount()
+        );
 
-    model.addAttribute(
-            "verifiedCount",
-            surveyService.getVerifiedCount()
-    );
+        model.addAttribute(
+                "closedCount",
+                surveyService.getClosedCount()
+        );
 
-    model.addAttribute(
-            "closedCount",
-            surveyService.getClosedCount()
-    );
-
-    return "dashboard";
-}
+        return "dashboard";
+    }
 }
