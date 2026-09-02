@@ -85,4 +85,50 @@ public class SurveyService {
             return surveyRepository.searchSurveys(query);
         }
     }
+
+    public Survey updateStatus(Long id, SurveyStatus newStatus, String changedBy) {
+
+    Survey survey = surveyRepository.findById(id)
+            .orElseThrow(() ->
+                    new RuntimeException("Survey not found with id: " + id));
+
+    SurveyStatus currentStatus = survey.getStatus();
+
+    boolean validTransition =
+            (currentStatus == SurveyStatus.DRAFT && newStatus == SurveyStatus.SUBMITTED)
+            || (currentStatus == SurveyStatus.SUBMITTED && newStatus == SurveyStatus.VERIFIED)
+            || (currentStatus == SurveyStatus.VERIFIED && newStatus == SurveyStatus.CLOSED);
+
+    if (!validTransition) {
+        throw new IllegalStateException(
+                "Invalid status transition from "
+                        + currentStatus + " to " + newStatus
+        );
+    }
+
+    survey.setStatus(newStatus);
+    survey.setStatusChangedBy(changedBy);
+
+    return surveyRepository.save(survey);
+}
+
+public long getTotalSurveyCount() {
+    return surveyRepository.count();
+}
+
+public long getDraftCount() {
+    return surveyRepository.countByStatus(SurveyStatus.DRAFT);
+}
+
+public long getSubmittedCount() {
+    return surveyRepository.countByStatus(SurveyStatus.SUBMITTED);
+}
+
+public long getVerifiedCount() {
+    return surveyRepository.countByStatus(SurveyStatus.VERIFIED);
+}
+
+public long getClosedCount() {
+    return surveyRepository.countByStatus(SurveyStatus.CLOSED);
+}
 }

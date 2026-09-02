@@ -48,6 +48,9 @@ public class Survey {
     @Enumerated(EnumType.STRING)
     private SurveyStatus status;
 
+    @Column(name = "status_changed_by")
+    private String statusChangedBy;
+
     public Long getId() {
         return id;
     }
@@ -111,4 +114,12 @@ public class Survey {
     public void setStatus(SurveyStatus status) {
         this.status = status;
     }
+
+    public String getStatusChangedBy() {
+    return statusChangedBy;
+}
+
+    public void setStatusChangedBy(String statusChangedBy) {
+    this.statusChangedBy = statusChangedBy;
+}
 }

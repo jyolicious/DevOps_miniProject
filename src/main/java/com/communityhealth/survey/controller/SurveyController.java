@@ -1,6 +1,7 @@
 package com.communityhealth.survey.controller;
 
 import com.communityhealth.survey.entity.Survey;
+import com.communityhealth.survey.enums.SurveyStatus;
 import com.communityhealth.survey.service.SurveyService;
 
 import jakarta.validation.Valid;
@@ -9,6 +10,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.communityhealth.survey.enums.SurveyStatus;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class SurveyController {
@@ -106,4 +110,57 @@ public class SurveyController {
 
         return "redirect:/surveys/" + id;
     }
+
+    @PostMapping("/surveys/{id}/status")
+public String updateStatus(
+        @PathVariable Long id,
+        @RequestParam SurveyStatus status,
+        RedirectAttributes redirectAttributes) {
+
+    try {
+        surveyService.updateStatus(id, status, "ADMIN");
+        redirectAttributes.addFlashAttribute(
+                "successMessage",
+                "Survey status updated successfully."
+        );
+    } catch (IllegalStateException e) {
+        redirectAttributes.addFlashAttribute(
+                "errorMessage",
+                e.getMessage()
+        );
+    }
+
+    return "redirect:/surveys/" + id;
+}
+
+@GetMapping("/dashboard")
+public String dashboard(Model model) {
+
+    model.addAttribute(
+            "totalCount",
+            surveyService.getTotalSurveyCount()
+    );
+
+    model.addAttribute(
+            "draftCount",
+            surveyService.getDraftCount()
+    );
+
+    model.addAttribute(
+            "submittedCount",
+            surveyService.getSubmittedCount()
+    );
+
+    model.addAttribute(
+            "verifiedCount",
+            surveyService.getVerifiedCount()
+    );
+
+    model.addAttribute(
+            "closedCount",
+            surveyService.getClosedCount()
+    );
+
+    return "dashboard";
+}
 }
