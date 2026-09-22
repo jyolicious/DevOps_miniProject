@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Survey Details</title>
+</head>
+
+<body>
+
+<h1>Survey Details</h1>
+
+<!-- Success Message -->
+<div th:if="${successMessage}" style="color: green;">
+    <p th:text="${successMessage}"></p>
+</div>
+
+<!-- Error Message -->
+<div th:if="${errorMessage}" style="color: red;">
+    <p th:text="${errorMessage}"></p>
+</div>
+
+<!-- Survey Information -->
+<table border="1" cellpadding="8">
+
+    <tr>
+        <th>ID</th>
+        <td th:text="${survey.id}"></td>
+    </tr>
+
+    <tr>
+        <th>Name</th>
+        <td th:text="${survey.name}"></td>
+    </tr>
+
+    <tr>
+        <th>Age</th>
+        <td th:text="${survey.age}"></td>
+    </tr>
+
+    <tr>
+        <th>Gender</th>
+        <td th:text="${survey.gender}"></td>
+    </tr>
+
+    <tr>
+        <th>Location</th>
+        <td th:text="${survey.location}"></td>
+    </tr>
+
+    <tr>
+        <th>Health Condition</th>
+        <td th:text="${survey.healthCondition}"></td>
+    </tr>
+
+    <tr>
+        <th>Survey Date</th>
+        <td th:text="${survey.surveyDate}"></td>
+    </tr>
+
+    <tr>
+        <th>Status</th>
+        <td th:text="${survey.status}"></td>
+    </tr>
+
+    <tr>
+        <th>Status Changed By</th>
+        <td th:text="${survey.statusChangedBy != null ? survey.statusChangedBy : 'Not changed yet'}"></td>
+    </tr>
+
+</table>
+
+<br>
+
+<!-- Survey Workflow -->
+
+<h2>Survey Workflow</h2>
+
+<p>
+    <strong>Current Status:</strong>
+    <span th:text="${survey.status}"></span>
+</p>
+
+
+<!-- DRAFT → SUBMITTED -->
+
+<div th:if="${survey.status != null and survey.status.name() == 'DRAFT'}">
+
+    <form th:action="@{/surveys/{id}/status(id=${survey.id})}"
+          method="post">
+
+        <input type="hidden"
+               name="status"
+               value="SUBMITTED">
+
+        <button type="submit">
+            Submit Survey
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- SUBMITTED → VERIFIED -->
+
+<div th:if="${survey.status != null and survey.status.name() == 'SUBMITTED'}">
+
+    <form th:action="@{/surveys/{id}/status(id=${survey.id})}"
+          method="post">
+
+        <input type="hidden"
+               name="status"
+               value="VERIFIED">
+
+        <button type="submit">
+            Verify Survey
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- VERIFIED → CLOSED -->
+
+<div th:if="${survey.status != null and survey.status.name() == 'VERIFIED'}">
+
+    <form th:action="@{/surveys/{id}/status(id=${survey.id})}"
+          method="post">
+
+        <input type="hidden"
+               name="status"
+               value="CLOSED">
+
+        <button type="submit">
+            Close Survey
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- CLOSED -->
+
+<div th:if="${survey.status != null and survey.status.name() == 'CLOSED'}">
+
+    <p>
+        Survey workflow completed.
+    </p>
+
+</div>
+
+<br>
+
+<!-- Navigation -->
+
+<a th:href="@{/surveys/{id}/edit(id=${survey.id})}">
+    Edit Survey
+</a>
+
+<br>
+<br>
+
+<a href="/surveys">
+    Back to Surveys
+</a>
+
+</body>
+
+</html>

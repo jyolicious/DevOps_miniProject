@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Dashboard</title>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+
+<h1>Community Health Survey Dashboard</h1>
+
+<h2>Total Surveys</h2>
+<p th:text="${totalCount}"></p>
+
+<h2>Surveys by Status</h2>
+
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Count</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr>
+            <td>DRAFT</td>
+            <td th:text="${draftCount}"></td>
+        </tr>
+
+        <tr>
+            <td>SUBMITTED</td>
+            <td th:text="${submittedCount}"></td>
+        </tr>
+
+        <tr>
+            <td>VERIFIED</td>
+            <td th:text="${verifiedCount}"></td>
+        </tr>
+
+        <tr>
+            <td>CLOSED</td>
+            <td th:text="${closedCount}"></td>
+        </tr>
+    </tbody>
+</table>
+
+<br>
+
+<a href="/surveys">View Surveys</a>
+
+</body>
+</html>

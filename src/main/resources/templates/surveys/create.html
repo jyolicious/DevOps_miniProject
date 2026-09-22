@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Create Survey</title>
+</head>
+
+<body>
+
+<h1>Create Community Health Survey</h1>
+
+<form th:action="@{/surveys}"
+      th:object="${survey}"
+      method="post">
+
+    <div>
+        <label>Name:</label>
+        <input type="text"
+               th:field="*{name}">
+
+        <p th:if="${#fields.hasErrors('name')}"
+           th:errors="*{name}">
+        </p>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Age:</label>
+        <input type="number"
+               th:field="*{age}">
+
+        <p th:if="${#fields.hasErrors('age')}"
+           th:errors="*{age}">
+        </p>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Gender:</label>
+
+        <select th:field="*{gender}">
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <p th:if="${#fields.hasErrors('gender')}"
+           th:errors="*{gender}">
+        </p>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Location:</label>
+        <input type="text"
+               th:field="*{location}">
+
+        <p th:if="${#fields.hasErrors('location')}"
+           th:errors="*{location}">
+        </p>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Health Condition:</label>
+        <input type="text"
+               th:field="*{healthCondition}">
+
+        <p th:if="${#fields.hasErrors('healthCondition')}"
+           th:errors="*{healthCondition}">
+        </p>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Survey Date:</label>
+        <input type="date"
+               th:field="*{surveyDate}">
+
+        <p th:if="${#fields.hasErrors('surveyDate')}"
+           th:errors="*{surveyDate}">
+        </p>
+    </div>
+
+    <br>
+
+    <button type="submit">
+        Create Survey
+    </button>
+
+</form>
+
+<br>
+
+<a href="/surveys">Back to Surveys</a>
+
+</body>
+
+</html>
