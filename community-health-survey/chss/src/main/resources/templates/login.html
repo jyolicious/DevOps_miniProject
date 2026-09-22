@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Community Health Survey System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<main style="max-width:400px;">
+    <h1>Community Health Survey System</h1>
+    <p th:if="${error}" class="error" th:text="${error}">Error</p>
+    <form th:action="@{/login}" method="post">
+        <div>
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus/>
+        </div>
+        <div>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required/>
+        </div>
+        <button type="submit">Log In</button>
+    </form>
+</main>
+</body>
+</html>

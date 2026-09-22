@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Survey Record Detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <div>Community Health Survey System</div>
+    <div>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/surveys}">Records</a>
+        <a th:href="@{/logout}">Logout</a>
+    </div>
+</header>
+<main>
+    <h1 th:text="'Survey #' + ${survey.id}"></h1>
+    <p th:if="${error}" class="error" th:text="${error}"></p>
+    <table>
+        <tr><th>Name</th><td th:text="${survey.name}"></td></tr>
+        <tr><th>Age</th><td th:text="${survey.age}"></td></tr>
+        <tr><th>Gender</th><td th:text="${survey.gender}"></td></tr>
+        <tr><th>Location</th><td th:text="${survey.location}"></td></tr>
+        <tr><th>Health Condition</th><td th:text="${survey.healthCondition}"></td></tr>
+        <tr><th>Survey Date</th><td th:text="${survey.surveyDate}"></td></tr>
+        <tr><th>Status</th><td th:text="${survey.status}"></td></tr>
+    </table>
+
+    <p style="margin-top:16px;"><a class="btn" th:href="@{'/surveys/' + ${survey.id} + '/edit'}">Edit Details</a></p>
+
+    <h2>Change Status (Administrator only)</h2>
+    <form th:action="@{'/surveys/' + ${survey.id} + '/status'}" method="post" style="display:flex; gap:8px;">
+        <select name="target">
+            <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}"></option>
+        </select>
+        <button type="submit">Update Status</button>
+    </form>
+</main>
+</body>
+</html>

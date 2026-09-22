@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Community Health Survey System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <div>Community Health Survey System</div>
+    <div>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/surveys}">Records</a>
+        <span th:if="${currentUser}" th:text="'(' + ${currentUser.username} + ' / ' + ${currentUser.role} + ')'"></span>
+        <a th:href="@{/logout}">Logout</a>
+    </div>
+</header>
+<main>
+    <h1>Survey Summary</h1>
+    <div class="summary-cards">
+        <div class="card"><div class="count" th:text="${summary['TOTAL']}">0</div><div>Total</div></div>
+        <div class="card"><div class="count" th:text="${summary['DRAFT']}">0</div><div>Draft</div></div>
+        <div class="card"><div class="count" th:text="${summary['SUBMITTED']}">0</div><div>Submitted</div></div>
+        <div class="card"><div class="count" th:text="${summary['VERIFIED']}">0</div><div>Verified</div></div>
+        <div class="card"><div class="count" th:text="${summary['CLOSED']}">0</div><div>Closed</div></div>
+    </div>
+    <p style="margin-top:24px;"><a class="btn" th:href="@{/surveys}">View Survey Records</a></p>
+</main>
+</body>
+</html>

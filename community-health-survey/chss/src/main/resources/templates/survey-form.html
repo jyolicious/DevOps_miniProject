@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Survey Record Form</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <div>Community Health Survey System</div>
+    <div>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/surveys}">Records</a>
+        <a th:href="@{/logout}">Logout</a>
+    </div>
+</header>
+<main>
+    <h1 th:text="${survey.id} != null ? 'Edit Survey Record' : 'New Survey Record'">Survey Record</h1>
+    <form th:action="${survey.id} != null ? '/surveys/' + ${survey.id} : '/surveys'" method="post"
+          th:object="${survey}">
+        <div>
+            <label>Name</label>
+            <input type="text" th:field="*{name}" required/>
+        </div>
+        <div>
+            <label>Age</label>
+            <input type="number" th:field="*{age}" required/>
+        </div>
+        <div>
+            <label>Gender</label>
+            <input type="text" th:field="*{gender}" required/>
+        </div>
+        <div>
+            <label>Location</label>
+            <input type="text" th:field="*{location}" required/>
+        </div>
+        <div>
+            <label>Health Condition</label>
+            <input type="text" th:field="*{healthCondition}"/>
+        </div>
+        <div>
+            <label>Survey Date</label>
+            <input type="date" th:field="*{surveyDate}" required/>
+        </div>
+        <button type="submit">Save</button>
+    </form>
+</main>
+</body>
+</html>

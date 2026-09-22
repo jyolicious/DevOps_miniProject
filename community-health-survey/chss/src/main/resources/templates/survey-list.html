@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Survey Records</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <div>Community Health Survey System</div>
+    <div>
+        <a th:href="@{/dashboard}">Dashboard</a>
+        <a th:href="@{/surveys}">Records</a>
+        <a th:href="@{/logout}">Logout</a>
+    </div>
+</header>
+<main>
+    <h1>Survey Records</h1>
+    <form th:action="@{/surveys}" method="get" style="display:flex; gap:8px; margin-bottom:16px;">
+        <input type="text" name="query" placeholder="Search by ID or name" th:value="${query}"/>
+        <button type="submit">Search</button>
+        <a class="btn" th:href="@{/surveys/new}" style="margin-left:auto;">+ New Record</a>
+    </form>
+    <table>
+        <thead>
+        <tr><th>ID</th><th>Name</th><th>Location</th><th>Status</th><th>Survey Date</th><th></th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="s : ${surveys}">
+            <td th:text="${s.id}"></td>
+            <td th:text="${s.name}"></td>
+            <td th:text="${s.location}"></td>
+            <td th:text="${s.status}"></td>
+            <td th:text="${s.surveyDate}"></td>
+            <td><a th:href="@{'/surveys/' + ${s.id}}">View</a></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(surveys)}"><td colspan="6">No records found.</td></tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
