@@ -2,6 +2,8 @@
 
 Save screenshots or exported Jenkins artifacts here after running the pipeline. No Jenkins build evidence has been captured yet.
 
+The local defect exercise has been verified: the temporary `Survey Summery` heading made `DashboardTest.dashboardDisplaysNumericSurveySummary` time out, and the corrected full local suite passed. Its Surefire report and screenshot are available in the project's ignored `target/` directory. These are local artifacts, not Jenkins evidence.
+
 - [ ] Pipeline stage view showing Selenium before Package and Deploy.
 - [ ] Jenkins JUnit report for the baseline run.
 - [ ] Deliberately broken application commit and its Selenium failure details.

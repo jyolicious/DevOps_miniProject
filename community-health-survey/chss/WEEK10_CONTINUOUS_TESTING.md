@@ -59,39 +59,41 @@ The pipeline archives `*.png` from this directory, including when the Selenium s
 
 ## Deliberate Defect
 
-**Status: not yet executed or committed.** No defect has been introduced at this point in the documented work. Do not treat the pipeline implementation or a local test as evidence of a Jenkins failure.
+**Local defect exercise completed; Jenkins failure evidence is still pending.**
 
-- Defect introduced:
-- Defect commit:
-- Selenium test expected to detect it:
+- Defect introduced: the dashboard heading was changed from `Survey Summary` to `Survey Summery`.
+- Defect commit: `6e12503` (`Week 10: Introduce dashboard defect for Selenium gate`).
+- Selenium test: `DashboardTest.dashboardDisplaysNumericSurveySummary`.
+- Local result: Maven failed as expected; the test timed out waiting for `Survey Summary`. Surefire recorded one test error. The local failure screenshot is in `target/selenium-screenshots/`.
 - Jenkins failed build number and URL:
-- Published failure report and screenshot:
-- Evidence Package/Deploy were skipped:
+- Jenkins JUnit report and archived screenshot: pending an authenticated Jenkins run.
+- Evidence Package/Deploy were skipped: pending an authenticated Jenkins run.
 
-These fields must be completed only after the failed Jenkins run is observed.
+The Jenkins build number, report publication, and skipped-stage result must be completed only after the failed Jenkins run is observed.
 
 ## Defect Correction
 
-**Status: pending the deliberate-failure exercise.**
+**Local correction completed; Jenkins correction evidence is pending.**
 
-- Root cause:
-- Corrected source file:
-- Fix commit:
-- Local regression result:
+- Root cause: the misspelled dashboard heading did not match the text asserted by the Selenium journey.
+- Correction: restore `Survey Summary` in `src/main/resources/templates/dashboard.html`.
+- Fix commit: `ebaa259` (`Week 10: Fix dashboard heading detected by Selenium`).
+- Local regression result: 9 tests passed, 0 failures, 0 errors, 0 skipped.
 
 ## Successful Rerun
 
 **Status: not yet verified in Jenkins.**
 
 - Jenkins build number and URL:
-- Selenium result:
-- JUnit report published:
-- Package result:
-- Tomcat deployment result and URL:
+- Local post-fix Selenium/JUnit result: 9 passed, 0 failures, 0 errors, 0 skipped.
+- Jenkins Selenium result: pending.
+- Jenkins JUnit report published: pending.
+- Jenkins Package result: pending.
+- Jenkins Tomcat deployment result and URL: pending.
 
 ## Jenkins Execution and Evidence
 
-The Jenkins login page at `http://localhost:8082` responded, but its JSON API returned HTTP 403 in this session. No Jenkins UI build was run or observed, and no Git push or Jenkins result is claimed here. The Jenkins operator must authenticate and run the configured `Community-Health-Survey-Pipeline` job after the relevant commits are available to its configured branch.
+The Jenkins login page at `http://localhost:8082` responded, but its JSON API returned HTTP 403 in this session. No Jenkins UI build was run or observed, and no Jenkins result is claimed here. The integration commit is `853244d`; the deliberate defect and correction commits are `6e12503` and `ebaa259`. Jenkins must be run against the defect revision and then the corrected revision so the job has time to publish both sets of evidence. The Jenkins operator must authenticate and run the configured `Community-Health-Survey-Pipeline` job against the intended revisions.
 
 The evidence checklist in [`week10-evidence/README.md`](week10-evidence/README.md) lists the exact Jenkins screenshots to save. Do not fill build numbers or mark evidence complete until the corresponding run is observed.
 
