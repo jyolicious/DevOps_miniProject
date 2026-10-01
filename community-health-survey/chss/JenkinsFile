@@ -9,6 +9,14 @@ pipeline {
         )
     }
 
+    environment {
+        // Keep the temporary test server separate from the local app (8081),
+        // Jenkins (8082), and deployment Tomcat (8083).
+        SELENIUM_PORT = '8181'
+        SELENIUM_REPORTS_PUBLISHED = 'false'
+        SELENIUM_EXIT_CODE = ''
+    }
+
     stages {
 
         stage('Checkout') {
@@ -19,7 +27,43 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml clean test'
+                bat 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml clean test-compile'
+            }
+        }
+
+        stage('Start Test Application') {
+            steps {
+                bat 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\start-selenium-app.ps1 -Port %SELENIUM_PORT%'
+            }
+        }
+
+        stage('Selenium Tests') {
+            steps {
+                script {
+                    withEnv(["SELENIUM_BASE_URL=http://localhost:${env.SELENIUM_PORT}"]) {
+                        env.SELENIUM_EXIT_CODE = "${bat(returnStatus: true, script: 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml test')}"
+                    }
+                    echo "Maven Selenium test process exited with code ${env.SELENIUM_EXIT_CODE}."
+                }
+            }
+        }
+
+        stage('Publish Test Reports') {
+            steps {
+                junit testResults: 'community-health-survey/chss/target/surefire-reports/*.xml', allowEmptyResults: true
+                archiveArtifacts artifacts: 'community-health-survey/chss/target/surefire-reports/*.xml,community-health-survey/chss/target/selenium-screenshots/**/*.png', allowEmptyArchive: true
+                script {
+                    env.SELENIUM_REPORTS_PUBLISHED = 'true'
+                    if (env.SELENIUM_EXIT_CODE != '0') {
+                        error("Selenium/Maven tests failed with exit code ${env.SELENIUM_EXIT_CODE}; refusing to package or deploy.")
+                    }
+                }
+            }
+        }
+
+        stage('Stop Test Application') {
+            steps {
+                bat 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\stop-selenium-app.ps1'
             }
         }
 
@@ -62,6 +106,16 @@ pipeline {
     }
 
     post {
+        always {
+            script {
+                if (env.SELENIUM_REPORTS_PUBLISHED != 'true') {
+                    junit testResults: 'community-health-survey/chss/target/surefire-reports/*.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: 'community-health-survey/chss/target/surefire-reports/*.xml,community-health-survey/chss/target/selenium-screenshots/**/*.png', allowEmptyArchive: true
+                }
+            }
+            bat 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\stop-selenium-app.ps1'
+        }
+
         success {
             echo 'Community Health Survey System deployed successfully!'
         }

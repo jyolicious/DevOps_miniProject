@@ -83,9 +83,12 @@ MVP (Week 1, Section 7.2).
 ```
 mvn test
 ```
-Currently covers the DRAFT → SUBMITTED → VERIFIED → CLOSED transition rules
-(`SurveyStatusTest`). Selenium WebDriver journeys are added in Week 9 per the
-project plan.
+Includes the DRAFT → SUBMITTED → VERIFIED → CLOSED transition rules
+(`SurveyStatusTest`) and Week 9 Selenium journeys under
+`src/test/java/com/chss/selenium/`. For Selenium tests, start the application
+separately at `http://localhost:8081` first; Maven tests do not launch a second
+application instance. Selenium Manager resolves ChromeDriver. See
+[`WEEK9_TEST_PLAN.md`](WEEK9_TEST_PLAN.md) for prerequisites and execution details.
 
 ## Next steps (per the sprint plan)
 - Week 4: initialize the Git/GitHub repository, branch policy, issue templates.
