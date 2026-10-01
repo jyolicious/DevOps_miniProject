@@ -93,7 +93,9 @@ The Jenkins build number, report publication, and skipped-stage result must be c
 
 ## Jenkins Execution and Evidence
 
-The Jenkins login page at `http://localhost:8082` responded, but its JSON API returned HTTP 403 in this session. No Jenkins UI build was run or observed, and no Jenkins result is claimed here. The integration commit is `853244d`; the deliberate defect and correction commits are `6e12503` and `ebaa259`. Jenkins must be run against the defect revision and then the corrected revision so the job has time to publish both sets of evidence. The Jenkins operator must authenticate and run the configured `Community-Health-Survey-Pipeline` job against the intended revisions.
+The Jenkins login page at `http://localhost:8082` responded, but its JSON API returned HTTP 403 in this session. No Jenkins UI build was run or observed, and no Jenkins result is claimed here. The integration commit is `853244d`; the deliberate defect and correction commits are `6e12503` and `ebaa259`; the test-results documentation commit is `3bfdfd8`. These commits were pushed to `origin/main`.
+
+To produce the required Jenkins defect and recovery runs, first run the job on `main` and capture its result. Then configure the job's Git branch specifier to the deliberate-defect revision `6e12503`, run it, and capture the failing test/report plus skipped Package/Deploy stages. Restore the branch specifier to `*/main`, save, and run again for the corrected commit. Jenkins must have its JUnit plugin, Java 17, Chrome, network access for Selenium Manager on first use, and access to the configured Tomcat installation. The Tomcat port was not listening when repository changes were prepared, so verify that the Deploy stage starts it successfully.
 
 The evidence checklist in [`week10-evidence/README.md`](week10-evidence/README.md) lists the exact Jenkins screenshots to save. Do not fill build numbers or mark evidence complete until the corresponding run is observed.
 

@@ -107,13 +107,13 @@ pipeline {
 
     post {
         always {
+            bat 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\stop-selenium-app.ps1'
             script {
                 if (env.SELENIUM_REPORTS_PUBLISHED != 'true') {
                     junit testResults: 'community-health-survey/chss/target/surefire-reports/*.xml', allowEmptyResults: true
                     archiveArtifacts artifacts: 'community-health-survey/chss/target/surefire-reports/*.xml,community-health-survey/chss/target/selenium-screenshots/**/*.png', allowEmptyArchive: true
                 }
             }
-            bat 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\stop-selenium-app.ps1'
         }
 
         success {
