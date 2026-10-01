@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'TOMCAT_HOME',
+            defaultValue: 'C:\\Users\\Jyotsna\\Downloads\\apache-tomcat-10.1.60',
+            description: 'Tomcat installation directory used for deployment'
+        )
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                bat 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml clean test'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                bat 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml package -DskipTests'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat '''
+                    echo Deploying Community Health Survey System...
+
+                    call "%TOMCAT_HOME%\\bin\\shutdown.bat"
+
+                    timeout /t 5 /nobreak >nul
+
+                    if exist "%TOMCAT_HOME%\\webapps\\community-health-survey.war" (
+                        del /Q "%TOMCAT_HOME%\\webapps\\community-health-survey.war"
+                    )
+
+                    if exist "%TOMCAT_HOME%\\webapps\\community-health-survey" (
+                        rmdir /S /Q "%TOMCAT_HOME%\\webapps\\community-health-survey"
+                    )
+
+                    copy /Y "community-health-survey\\chss\\target\\community-health-survey.war" "%TOMCAT_HOME%\\webapps\\community-health-survey.war"
+
+                    echo WAR deployed successfully.
+
+                    call "%TOMCAT_HOME%\\bin\\startup.bat"
+
+                    timeout /t 15 /nobreak >nul
+
+                    echo Checking Tomcat deployment...
+                    powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8083/community-health-survey/' -UseBasicParsing; Write-Host ('HTTP Status: ' + $r.StatusCode) } catch { Write-Host ('Deployment check failed: ' + $_.Exception.Message); exit 1 }"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Community Health Survey System deployed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the console output.'
+        }
+    }
+}
