@@ -109,10 +109,32 @@ pipeline {
                 bat '''
                     echo Deploying Community Health Survey System...
 
+                    set "JAVA_HOME=C:\\Program Files\\Eclipse Adoptium\\jdk-17.0.18.8-hotspot"
+                    set "JRE_HOME=%JAVA_HOME%"
                     set "CATALINA_HOME=%TOMCAT_HOME%"
+
+                    if not defined JAVA_HOME (
+                        echo JAVA_HOME is empty; cannot start Tomcat.
+                        exit /b 1
+                    )
+
+                    if not exist "%JAVA_HOME%" (
+                        echo Java installation not found under "%JAVA_HOME%".
+                        exit /b 1
+                    )
+
+                    if not exist "%JAVA_HOME%\\bin\\java.exe" (
+                        echo Java executable not found under "%JAVA_HOME%\\bin".
+                        exit /b 1
+                    )
 
                     if not defined CATALINA_HOME (
                         echo TOMCAT_HOME is empty; cannot configure CATALINA_HOME.
+                        exit /b 1
+                    )
+
+                    if not exist "%CATALINA_HOME%" (
+                        echo Tomcat installation not found under "%CATALINA_HOME%".
                         exit /b 1
                     )
 
@@ -137,6 +159,10 @@ pipeline {
                     )
 
                     call "%CATALINA_HOME%\\bin\\shutdown.bat"
+                    if errorlevel 1 (
+                        echo Tomcat shutdown failed.
+                        exit /b 1
+                    )
 
                     timeout /t 5 /nobreak >nul
 
@@ -156,7 +182,10 @@ pipeline {
                     echo WAR deployed successfully.
 
                     call "%CATALINA_HOME%\\bin\\startup.bat"
-                    if errorlevel 1 exit /b 1
+                    if errorlevel 1 (
+                        echo Tomcat startup failed.
+                        exit /b 1
+                    )
 
                     timeout /t 15 /nobreak >nul
 
