@@ -206,13 +206,13 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
+                        credentialsId: 'c27f4f84-7934-485c-9d63-7af70c6fad7c',
                         usernameVariable: 'DOCKERHUB_USERNAME',
                         passwordVariable: 'DOCKERHUB_TOKEN'
                     )]) {
                         def dockerHubUsername = env.DOCKERHUB_USERNAME?.trim()?.toLowerCase()
                         if (!dockerHubUsername || !(dockerHubUsername ==~ /[a-z0-9][a-z0-9._-]*/)) {
-                            error('The dockerhub-credentials Jenkins credential must contain a valid Docker Hub username.')
+                            error('The c27f4f84-7934-485c-9d63-7af70c6fad7c Jenkins credential must contain a valid Docker Hub username.')
                         }
 
                         env.CHSS_DOCKER_IMAGE = "${dockerHubUsername}/chss-app:build-${env.BUILD_NUMBER}"
@@ -234,7 +234,7 @@ pipeline {
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
+                    credentialsId: 'c27f4f84-7934-485c-9d63-7af70c6fad7c',
                     usernameVariable: 'DOCKERHUB_USERNAME',
                     passwordVariable: 'DOCKERHUB_TOKEN'
                 )]) {
