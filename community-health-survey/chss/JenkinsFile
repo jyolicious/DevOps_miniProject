@@ -109,28 +109,60 @@ pipeline {
                 bat '''
                     echo Deploying Community Health Survey System...
 
-                    call "%TOMCAT_HOME%\\bin\\shutdown.bat"
+                    set "CATALINA_HOME=%TOMCAT_HOME%"
+
+                    if not defined CATALINA_HOME (
+                        echo TOMCAT_HOME is empty; cannot configure CATALINA_HOME.
+                        exit /b 1
+                    )
+
+                    if not exist "%CATALINA_HOME%\\bin\\shutdown.bat" (
+                        echo Tomcat shutdown script not found under "%CATALINA_HOME%".
+                        exit /b 1
+                    )
+
+                    if not exist "%CATALINA_HOME%\\bin\\startup.bat" (
+                        echo Tomcat startup script not found under "%CATALINA_HOME%".
+                        exit /b 1
+                    )
+
+                    if not exist "%CATALINA_HOME%\\webapps" (
+                        echo Tomcat webapps directory not found under "%CATALINA_HOME%".
+                        exit /b 1
+                    )
+
+                    if not exist "community-health-survey\\chss\\target\\community-health-survey.war" (
+                        echo Packaged WAR not found; refusing to deploy.
+                        exit /b 1
+                    )
+
+                    call "%CATALINA_HOME%\\bin\\shutdown.bat"
 
                     timeout /t 5 /nobreak >nul
 
-                    if exist "%TOMCAT_HOME%\\webapps\\community-health-survey.war" (
-                        del /Q "%TOMCAT_HOME%\\webapps\\community-health-survey.war"
+                    if exist "%CATALINA_HOME%\\webapps\\community-health-survey.war" (
+                        del /Q "%CATALINA_HOME%\\webapps\\community-health-survey.war"
+                        if errorlevel 1 exit /b 1
                     )
 
-                    if exist "%TOMCAT_HOME%\\webapps\\community-health-survey" (
-                        rmdir /S /Q "%TOMCAT_HOME%\\webapps\\community-health-survey"
+                    if exist "%CATALINA_HOME%\\webapps\\community-health-survey" (
+                        rmdir /S /Q "%CATALINA_HOME%\\webapps\\community-health-survey"
+                        if errorlevel 1 exit /b 1
                     )
 
-                    copy /Y "community-health-survey\\chss\\target\\community-health-survey.war" "%TOMCAT_HOME%\\webapps\\community-health-survey.war"
+                    copy /Y "community-health-survey\\chss\\target\\community-health-survey.war" "%CATALINA_HOME%\\webapps\\community-health-survey.war"
+                    if errorlevel 1 exit /b 1
 
                     echo WAR deployed successfully.
 
-                    call "%TOMCAT_HOME%\\bin\\startup.bat"
+                    call "%CATALINA_HOME%\\bin\\startup.bat"
+                    if errorlevel 1 exit /b 1
 
                     timeout /t 15 /nobreak >nul
 
                     echo Checking Tomcat deployment...
-                    powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8083/community-health-survey/' -UseBasicParsing; Write-Host ('HTTP Status: ' + $r.StatusCode) } catch { Write-Host ('Deployment check failed: ' + $_.Exception.Message); exit 1 }"
+                    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; try { $r = Invoke-WebRequest -Uri 'http://localhost:8083/community-health-survey/' -UseBasicParsing -TimeoutSec 15; if ($r.StatusCode -lt 200 -or $r.StatusCode -ge 300) { throw ('Unexpected HTTP status: ' + $r.StatusCode) }; Write-Host ('HTTP Status: ' + $r.StatusCode) } catch { Write-Error ('Deployment check failed: ' + $_.Exception.Message); exit 1 }"
+                    if errorlevel 1 exit /b 1
                 '''
             }
         }
