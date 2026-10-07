@@ -19,7 +19,6 @@ pipeline {
         // Jenkins (8082), and deployment Tomcat (8083).
         SELENIUM_PORT = '8181'
         SELENIUM_REPORTS_PUBLISHED = 'false'
-        SELENIUM_EXIT_CODE = ''
     }
 
     stages {
@@ -68,7 +67,10 @@ pipeline {
                     if (seleniumExitCode == null) {
                         error('Maven Selenium test process did not return an exit status.')
                     }
-                    env.SELENIUM_EXIT_CODE = seleniumExitCode.toString()
+                    writeFile(
+                        file: 'community-health-survey/chss/target/selenium-exit-code.txt',
+                        text: seleniumExitCode.toString()
+                    )
                     echo "Maven Selenium test process exited with code ${seleniumExitCode}."
                 }
             }
@@ -80,8 +82,11 @@ pipeline {
                 archiveArtifacts artifacts: 'community-health-survey/chss/target/surefire-reports/*.xml,community-health-survey/chss/target/selenium-screenshots/**/*.png', allowEmptyArchive: true
                 script {
                     env.SELENIUM_REPORTS_PUBLISHED = 'true'
-                    if (env.SELENIUM_EXIT_CODE != '0') {
-                        error("Selenium/Maven tests failed with exit code ${env.SELENIUM_EXIT_CODE}; refusing to package or deploy.")
+                    int seleniumExitCode = readFile(
+                        file: 'community-health-survey/chss/target/selenium-exit-code.txt'
+                    ).trim().toInteger()
+                    if (seleniumExitCode != 0) {
+                        error("Selenium/Maven tests failed with exit code ${seleniumExitCode}; refusing to package or deploy.")
                     }
                 }
             }
