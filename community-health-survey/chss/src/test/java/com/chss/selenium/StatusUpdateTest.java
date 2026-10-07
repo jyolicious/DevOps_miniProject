@@ -13,9 +13,13 @@ class StatusUpdateTest extends BaseSeleniumTest {
         loginAs("admin1");
         String name = uniqueName();
         createSurvey(name);
-        driver.findElement(By.xpath("//tr[td[normalize-space()=" + xpathLiteral(name) + "]]//a[normalize-space()='View']")).click();
-        wait.until(ExpectedConditions.urlContains("/surveys/"));
+        By viewLink = By.xpath("//tr[td[normalize-space()=" + xpathLiteral(name) + "]]//a[normalize-space()='View']");
+        var link = wait.until(ExpectedConditions.elementToBeClickable(viewLink));
+        String detailUrl = link.getDomProperty("href");
+        driver.navigate().to(detailUrl);
+        wait.until(ExpectedConditions.urlToBe(detailUrl));
         By status = By.xpath("//tr[th[normalize-space()='Status']]/td");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(status));
         for (String next : new String[]{"SUBMITTED", "VERIFIED", "CLOSED"}) {
             new Select(driver.findElement(By.name("target"))).selectByVisibleText(next);
             driver.findElement(By.xpath("//form[.//select[@name='target']]//button[@type='submit']")).click();

@@ -8,8 +8,10 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,27 +80,49 @@ public abstract class BaseSeleniumTest {
 
     protected void createSurvey(String name) {
         driver.get(baseUrl + "/surveys/new");
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("name"))).sendKeys(name);
-        driver.findElement(By.name("age")).sendKeys("34");
-        driver.findElement(By.name("gender")).sendKeys("Synthetic");
-        driver.findElement(By.name("location")).sendKeys("TestLocation_01");
-        driver.findElement(By.name("healthCondition")).sendKeys("SyntheticCondition");
+        wait.until(d -> "complete".equals(((JavascriptExecutor) d)
+                .executeScript("return document.readyState")));
+        setSurveyFieldValue(By.name("name"), name);
+        setSurveyFieldValue(By.name("age"), "34");
+        setSurveyFieldValue(By.name("gender"), "Synthetic");
+        setSurveyFieldValue(By.name("location"), "TestLocation_01");
+        setSurveyFieldValue(By.name("healthCondition"), "SyntheticCondition");
         String expectedDate = LocalDate.now().toString();
-        var surveyDate = driver.findElement(By.name("surveyDate"));
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true})); " +
-                        "arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
-                surveyDate, expectedDate);
-        wait.until(ExpectedConditions.attributeToBe(By.name("surveyDate"), "value", expectedDate));
+        setSurveyFieldValue(By.name("surveyDate"), expectedDate);
+        try {
+            wait.until(d -> Boolean.TRUE.equals(((JavascriptExecutor) d).executeScript(
+                    "return arguments[0].checkValidity()", d.findElement(By.cssSelector("form")))));
+        } catch (TimeoutException invalidForm) {
+            assertTrue(false, "Survey form is invalid before submission. Invalid controls: " +
+                    ((JavascriptExecutor) driver).executeScript(
+                            "return Array.from(arguments[0].elements)" +
+                                    ".filter(element => !element.checkValidity())" +
+                                    ".map(element => ({name: element.name, type: element.type, value: element.value, " +
+                                    "message: element.validationMessage}))",
+                            driver.findElement(By.cssSelector("form"))));
+        }
         assertTrue((Boolean) ((JavascriptExecutor) driver).executeScript(
                 "return arguments[0].checkValidity()", driver.findElement(By.cssSelector("form"))),
                 "Survey form must satisfy browser validation before submission");
-        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("button[type='submit']"))).click();
+        WebElement submitButton = wait.until(
+                ExpectedConditions.elementToBeClickable(By.cssSelector("button[type='submit']")));
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].requestSubmit(arguments[1])",
+                driver.findElement(By.cssSelector("form")), submitButton);
         wait.until(ExpectedConditions.urlToBe(baseUrl + "/surveys"));
         wait.until(ExpectedConditions.textToBePresentInElementLocated(
                 By.cssSelector("main h1"), "Survey Records"));
         wait.until(ExpectedConditions.refreshed(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//td[normalize-space()=" + xpathLiteral(name) + "]"))));
+    }
+
+    private void setSurveyFieldValue(By locator, String value) {
+        WebElement field = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true})); " +
+                        "arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
+                field, value);
+        wait.until(d -> value.equals(d.findElement(locator).getDomProperty("value")));
     }
 
     protected void assertVisibleText(String text) {
