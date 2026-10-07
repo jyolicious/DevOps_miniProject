@@ -158,13 +158,18 @@ pipeline {
                         exit /b 1
                     )
 
-                    call "%CATALINA_HOME%\\bin\\shutdown.bat"
+                    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$client = New-Object System.Net.Sockets.TcpClient; $listening = $false; try { $client.Connect('127.0.0.1', 8083); $listening = $true } catch { } finally { $client.Dispose() }; if ($listening) { exit 0 } else { exit 1 }"
                     if errorlevel 1 (
-                        echo Tomcat shutdown failed.
-                        exit /b 1
+                        echo Tomcat is already stopped; skipping shutdown.
+                    ) else (
+                        call "%CATALINA_HOME%\\bin\\shutdown.bat" <NUL
+                        if errorlevel 1 (
+                            echo Tomcat shutdown failed.
+                            exit /b 1
+                        )
+                        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$stopped = $false; for ($i = 0; $i -lt 30; $i++) { $client = New-Object System.Net.Sockets.TcpClient; $listening = $false; try { $client.Connect('127.0.0.1', 8083); $listening = $true } catch { } finally { $client.Dispose() }; if (-not $listening) { $stopped = $true; break }; Start-Sleep -Seconds 1 }; if (-not $stopped) { Write-Error 'Tomcat did not stop listening on port 8083'; exit 1 }"
+                        if errorlevel 1 exit /b 1
                     )
-
-                    timeout /t 5 /nobreak >nul
 
                     if exist "%CATALINA_HOME%\\webapps\\community-health-survey.war" (
                         del /Q "%CATALINA_HOME%\\webapps\\community-health-survey.war"
@@ -181,16 +186,17 @@ pipeline {
 
                     echo WAR deployed successfully.
 
-                    call "%CATALINA_HOME%\\bin\\startup.bat"
+                    call "%CATALINA_HOME%\\bin\\startup.bat" <NUL
                     if errorlevel 1 (
                         echo Tomcat startup failed.
                         exit /b 1
                     )
 
-                    timeout /t 15 /nobreak >nul
+                    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ready = $false; for ($i = 0; $i -lt 90; $i++) { $client = New-Object System.Net.Sockets.TcpClient; try { $client.Connect('127.0.0.1', 8083); $ready = $true } catch { } finally { $client.Dispose() }; if ($ready) { break }; Start-Sleep -Seconds 1 }; if (-not $ready) { Write-Error 'Tomcat did not start listening on port 8083 within 90 seconds'; exit 1 }"
+                    if errorlevel 1 exit /b 1
 
                     echo Checking Tomcat deployment...
-                    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; try { $r = Invoke-WebRequest -Uri 'http://localhost:8083/community-health-survey/' -UseBasicParsing -TimeoutSec 15; if ($r.StatusCode -lt 200 -or $r.StatusCode -ge 300) { throw ('Unexpected HTTP status: ' + $r.StatusCode) }; Write-Host ('HTTP Status: ' + $r.StatusCode) } catch { Write-Error ('Deployment check failed: ' + $_.Exception.Message); exit 1 }"
+                    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; $deadline = (Get-Date).AddSeconds(60); $verified = $false; $lastError = 'No successful 2xx response received'; do { try { $r = Invoke-WebRequest -Uri 'http://localhost:8083/community-health-survey/' -UseBasicParsing -TimeoutSec 5; if ($r.StatusCode -ge 200 -and $r.StatusCode -lt 300) { Write-Host ('HTTP Status: ' + $r.StatusCode); $verified = $true; break }; $lastError = 'Unexpected HTTP status: ' + $r.StatusCode } catch { $lastError = $_.Exception.Message }; if (-not $verified) { Start-Sleep -Seconds 2 } } while ((Get-Date) -lt $deadline); if (-not $verified) { Write-Error ('Deployment check failed: ' + $lastError); exit 1 }"
                     if errorlevel 1 exit /b 1
                 '''
             }
