@@ -6,6 +6,11 @@ pipeline {
             name: 'TOMCAT_HOME',
             defaultValue: 'C:\\Users\\Jyotsna\\Downloads\\apache-tomcat-10.1.60',
             description: 'Tomcat installation directory used for deployment'
+        ),
+        string(
+            name: 'GIT_REVISION',
+            defaultValue: 'main',
+            description: 'Git branch, tag, or commit SHA to build'
         )
     }
 
@@ -21,7 +26,20 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    // Keep the job's configured repository URL, credentials, and extensions,
+                    // while selecting the requested branch, tag, or commit for this run.
+                    def jobScm = scm
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: params.GIT_REVISION]],
+                        doGenerateSubmoduleConfigurations: jobScm.doGenerateSubmoduleConfigurations,
+                        extensions: jobScm.extensions,
+                        gitTool: jobScm.gitTool,
+                        submoduleCfg: jobScm.submoduleCfg,
+                        userRemoteConfigs: jobScm.userRemoteConfigs
+                    ])
+                }
             }
         }
 
