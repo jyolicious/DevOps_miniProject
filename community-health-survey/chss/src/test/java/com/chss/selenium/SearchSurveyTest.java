@@ -15,8 +15,12 @@ class SearchSurveyTest extends BaseSeleniumTest {
         driver.findElement(By.name("query")).clear();
         driver.findElement(By.name("query")).sendKeys(name.toLowerCase());
         driver.findElement(By.cssSelector("form button[type='submit']")).click();
-        assertTrue(wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//td[normalize-space()=" + xpathLiteral(name) + "]"))).isDisplayed());
-        assertTrue(driver.findElement(By.tagName("body")).getText().contains(name));
+
+        wait.until(ExpectedConditions.urlContains("/surveys?query=" + name.toLowerCase()));
+        By matchingSurvey = By.xpath("//td[normalize-space()=" + xpathLiteral(name) + "]");
+        assertTrue(wait.until(ExpectedConditions.refreshed(
+                ExpectedConditions.visibilityOfElementLocated(matchingSurvey))).isDisplayed());
+        assertTrue(wait.until(ExpectedConditions.textToBePresentInElementLocated(
+                By.tagName("body"), name)));
     }
 }
