@@ -83,12 +83,17 @@ public abstract class BaseSeleniumTest {
         driver.findElement(By.name("gender")).sendKeys("Synthetic");
         driver.findElement(By.name("location")).sendKeys("TestLocation_01");
         driver.findElement(By.name("healthCondition")).sendKeys("SyntheticCondition");
+        String expectedDate = LocalDate.now().toString();
         var surveyDate = driver.findElement(By.name("surveyDate"));
         ((JavascriptExecutor) driver).executeScript(
                 "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true})); " +
                         "arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
-                surveyDate, LocalDate.now().toString());
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
+                surveyDate, expectedDate);
+        wait.until(ExpectedConditions.attributeToBe(By.name("surveyDate"), "value", expectedDate));
+        assertTrue((Boolean) ((JavascriptExecutor) driver).executeScript(
+                "return arguments[0].checkValidity()", driver.findElement(By.cssSelector("form"))),
+                "Survey form must satisfy browser validation before submission");
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("button[type='submit']"))).click();
         wait.until(ExpectedConditions.urlToBe(baseUrl + "/surveys"));
         wait.until(ExpectedConditions.textToBePresentInElementLocated(
                 By.cssSelector("main h1"), "Survey Records"));
