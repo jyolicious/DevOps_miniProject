@@ -6,7 +6,7 @@ pipeline {
             name: 'TOMCAT_HOME',
             defaultValue: 'C:\\Users\\Jyotsna\\Downloads\\apache-tomcat-10.1.60',
             description: 'Tomcat installation directory used for deployment'
-        ),
+        )
         string(
             name: 'GIT_REVISION',
             defaultValue: 'main',
