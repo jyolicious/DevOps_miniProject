@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,7 +73,7 @@ public abstract class BaseSeleniumTest {
     }
 
     protected String uniqueName() {
-        return "SeleniumUser_" + System.currentTimeMillis();
+        return "SeleniumUser_" + UUID.randomUUID().toString().replace("-", "");
     }
 
     protected void createSurvey(String name) {
@@ -88,8 +89,11 @@ public abstract class BaseSeleniumTest {
                         "arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
                 surveyDate, LocalDate.now().toString());
         driver.findElement(By.cssSelector("button[type='submit']")).click();
-        wait.until(ExpectedConditions.urlContains("/surveys"));
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//td[normalize-space()=" + xpathLiteral(name) + "]")));
+        wait.until(ExpectedConditions.urlToBe(baseUrl + "/surveys"));
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(
+                By.cssSelector("main h1"), "Survey Records"));
+        wait.until(ExpectedConditions.refreshed(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//td[normalize-space()=" + xpathLiteral(name) + "]"))));
     }
 
     protected void assertVisibleText(String text) {
