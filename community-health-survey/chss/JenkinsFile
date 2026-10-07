@@ -58,10 +58,18 @@ pipeline {
         stage('Selenium Tests') {
             steps {
                 script {
+                    def seleniumExitCode
                     withEnv(["SELENIUM_BASE_URL=http://localhost:${env.SELENIUM_PORT}"]) {
-                        env.SELENIUM_EXIT_CODE = "${bat(returnStatus: true, script: 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml test')}"
+                        seleniumExitCode = bat(
+                            returnStatus: true,
+                            script: 'call mvnw.cmd -f community-health-survey\\chss\\pom.xml test'
+                        )
                     }
-                    echo "Maven Selenium test process exited with code ${env.SELENIUM_EXIT_CODE}."
+                    if (seleniumExitCode == null) {
+                        error('Maven Selenium test process did not return an exit status.')
+                    }
+                    env.SELENIUM_EXIT_CODE = seleniumExitCode.toString()
+                    echo "Maven Selenium test process exited with code ${seleniumExitCode}."
                 }
             }
         }
