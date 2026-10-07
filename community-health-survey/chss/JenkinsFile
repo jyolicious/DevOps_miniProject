@@ -201,11 +201,102 @@ pipeline {
                 '''
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USERNAME',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )]) {
+                        def dockerHubUsername = env.DOCKERHUB_USERNAME?.trim()?.toLowerCase()
+                        if (!dockerHubUsername || !(dockerHubUsername ==~ /[a-z0-9][a-z0-9._-]*/)) {
+                            error('The dockerhub-credentials Jenkins credential must contain a valid Docker Hub username.')
+                        }
+
+                        env.CHSS_DOCKER_IMAGE = "${dockerHubUsername}/chss-app:build-${env.BUILD_NUMBER}"
+                        env.CHSS_DOCKER_CONFIG = "${pwd(tmp: true)}\\chss-docker-${env.BUILD_NUMBER}"
+                        echo "Building Docker Hub image ${env.CHSS_DOCKER_IMAGE} for Jenkins BUILD_NUMBER=${env.BUILD_NUMBER}."
+
+                        bat '''
+                            @echo off
+                            docker build --file "community-health-survey\\chss\\Dockerfile" --tag "%CHSS_DOCKER_IMAGE%" "community-health-survey\\chss"
+                            if errorlevel 1 exit /b 1
+                            docker image inspect --format "Built={{.RepoTags}} ImageID={{.Id}}" "%CHSS_DOCKER_IMAGE%"
+                            if errorlevel 1 exit /b 1
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_TOKEN'
+                )]) {
+                    withEnv(["DOCKER_CONFIG=${env.CHSS_DOCKER_CONFIG}"]) {
+                        bat 'powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\dockerhub-login.ps1'
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withEnv(["DOCKER_CONFIG=${env.CHSS_DOCKER_CONFIG}"]) {
+                    bat '''
+                        @echo off
+                        echo Pushing %CHSS_DOCKER_IMAGE% to Docker Hub.
+                        docker --config "%DOCKER_CONFIG%" push "%CHSS_DOCKER_IMAGE%"
+                        if errorlevel 1 exit /b 1
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Docker Hub Image') {
+            steps {
+                withEnv(["DOCKER_CONFIG=${env.CHSS_DOCKER_CONFIG}"]) {
+                    bat 'powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\verify-docker-registry.ps1'
+                    archiveArtifacts artifacts: 'community-health-survey/chss/target/docker-hub-manifest-build-*.json', fingerprint: true
+                }
+            }
+        }
+
+        stage('Deploy Fresh Docker Container') {
+            steps {
+                withEnv(["DOCKER_CONFIG=${env.CHSS_DOCKER_CONFIG}"]) {
+                    bat 'powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\deploy-docker.ps1 -Image "%CHSS_DOCKER_IMAGE%"'
+                }
+            }
+        }
+
+        stage('Verify Docker Container') {
+            steps {
+                bat 'powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\verify-docker-container.ps1 -Image "%CHSS_DOCKER_IMAGE%"'
+            }
+        }
+
+        stage('Verify Application Health') {
+            steps {
+                bat 'powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\verify-docker-health.ps1 -TimeoutSeconds 90'
+            }
+        }
     }
 
     post {
         always {
             bat 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File community-health-survey\\chss\\scripts\\stop-selenium-app.ps1'
+            bat '''
+                @echo off
+                if defined CHSS_DOCKER_CONFIG (
+                    powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Remove-Item -LiteralPath $env:CHSS_DOCKER_CONFIG -Recurse -Force -ErrorAction SilentlyContinue"
+                )
+            '''
             script {
                 if (env.SELENIUM_REPORTS_PUBLISHED != 'true') {
                     junit testResults: 'community-health-survey/chss/target/surefire-reports/*.xml', allowEmptyResults: true

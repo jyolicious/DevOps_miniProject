@@ -90,6 +90,23 @@ separately at `http://localhost:8081` first; Maven tests do not launch a second
 application instance. Selenium Manager resolves ChromeDriver. See
 [`WEEK9_TEST_PLAN.md`](WEEK9_TEST_PLAN.md) for prerequisites and execution details.
 
+## Week 12: Jenkins-Docker continuous deployment
+
+The Jenkins pipeline checks out the selected `GIT_REVISION`, builds the Maven
+project, runs the Selenium suite, and publishes JUnit reports before any Docker
+stage can run. A successful test gate builds the existing Dockerfile and tags
+the image as `<Docker Hub username>/chss-app:build-${BUILD_NUMBER}`. Jenkins
+Credentials (`dockerhub-credentials`, username/password type, with a Docker Hub
+Personal Access Token as the password) authenticates the push without storing
+the token in source control. The pipeline verifies the pushed registry manifest,
+replaces only the CHSS `chss-container` on host port 18082, checks container
+metadata/log startup, and health-checks `http://localhost:18082/login`.
+
+The Docker deployment uses an isolated in-memory H2 database for lifecycle
+verification. MySQL connectivity from the container is not claimed by this
+pipeline run; supply database settings securely if a MySQL-backed deployment is
+required.
+
 ## Next steps (per the sprint plan)
 - Week 4: initialize the Git/GitHub repository, branch policy, issue templates.
 - Weeks 5–6: finish remaining MVP polish and Git collaboration workflow.
