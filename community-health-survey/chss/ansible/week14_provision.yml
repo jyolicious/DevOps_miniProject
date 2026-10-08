@@ -1,0 +1,91 @@
+---
+- name: Provision and verify the isolated CHSS Week 14 release
+  hosts: chss_week14
+  gather_facts: true
+
+  vars:
+    chss_image: jyotsnakasi/chss-app:build-20
+    chss_container_name: chss-week14
+    chss_host_port: 18084
+    chss_container_port: 8081
+    chss_release_label: "{{ chss_image }}"
+    chss_h2_database: "jdbc:h2:mem:week14;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+
+  pre_tasks:
+    - name: Require a Debian-family Linux target
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.os_family == "Debian"
+        fail_msg: "Week 14 provisioning supports Debian-family Linux targets."
+
+    - name: Inspect any existing Week 14 container without changing it
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - --format
+          - "{{ '{{' }}json .Config.Labels{{ '}}' }}"
+          - "{{ chss_container_name }}"
+      register: chss_existing_container
+      changed_when: false
+      failed_when: chss_existing_container.rc not in [0, 1]
+
+    - name: Refuse to replace a container not managed by Week 14
+      ansible.builtin.assert:
+        that:
+          - >-
+            (chss_existing_container.stdout | from_json | default({}, true)).get(
+            'com.chss.managed-by', '') == 'ansible-week14'
+        fail_msg: >-
+          A container named {{ chss_container_name }} already exists but is not
+          labelled as managed by Week 14; it has not been changed.
+      when: chss_existing_container.rc == 0
+
+  tasks:
+    - name: Ensure host prerequisites and Docker build tooling are installed
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - docker.io
+          - docker-buildx
+          - python3
+          - python3-docker
+        state: present
+        update_cache: false
+
+    - name: Ensure Docker Engine is enabled and running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Deploy the requested CHSS image to the isolated Week 14 port
+      community.docker.docker_container:
+        name: "{{ chss_container_name }}"
+        image: "{{ chss_image }}"
+        state: started
+        pull: missing
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ chss_host_port }}:{{ chss_container_port }}"
+        env:
+          APP_PORT: "{{ chss_container_port | string }}"
+          DB_URL: "{{ chss_h2_database }}"
+          DB_USERNAME: sa
+          DB_PASSWORD: ""
+        labels:
+          com.chss.application: community-health-survey-system
+          com.chss.managed-by: ansible-week14
+          com.chss.release-image: "{{ chss_release_label }}"
+
+    - name: Wait for the CHSS login endpoint to return HTTP 200
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ chss_host_port }}/login"
+        method: GET
+        status_code: 200
+        return_content: false
+      register: chss_health_check
+      retries: 45
+      delay: 2
+      until: chss_health_check.status == 200
+      changed_when: false

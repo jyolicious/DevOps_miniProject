@@ -1,0 +1,635 @@
+Week 14 — Automated Provisioning and Reliability Validation
+Project: Community Health Survey System
+Target: Ubuntu 26.04.1 LTS on WSL2; Ansible Core 2.20.1
+Container: chss-week14; TCP 18084 -> container TCP 8081
+
+Image discovery before provisioning:
+- Docker Hub listed one active CHSS repository tag: build-20.
+- Stable image: jyotsnakasi/chss-app:build-20
+- Published manifest digest: sha256:36a23bd53295ec2f1f0168bcc579aca7bc4b895b340985a9340991421face45e.
+- No newer published CHSS tag was available. The alternate candidate is built
+  locally from the current committed Git revision and is identified as such;
+  it is not represented as a published Docker Hub release.
+
+Capture-tooling issue and resolution:
+- Initial terminal capture did not run Ansible because Tee-Object was called
+  with an unsupported parameter. The real error screenshot is preserved as
+  00_capture_helper_error.png.
+- A later target-only check ran successfully, but the WSL distribution-list
+  text was encoded as UTF-16 in the initial transcript. The first normalization
+  edit was invalid PowerShell and also stopped before Ansible; that real error
+  screenshot is preserved as 00_capture_helper_encoding_error.png.
+- The helper now normalizes WSL output and writes UTF-8 text. Neither helper
+  error altered the target or performed any Ansible provisioning.
+
+The remaining stage output is appended directly from commands as they run.
+=== A. WSL target distribution ===
+  NAME              STATE           VERSION
+
+* docker-desktop    Running         2
+
+  Ubuntu            Running         2
+
+
+
+=== Ansible, Ubuntu, Docker Engine, and service verification ===
+OS: Ubuntu 26.04.1 LTS
+ansible [core 2.20.1]
+  config file = None
+  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+7.1.0
+Client=29.1.3 Server=29.1.3
+active
+enabled
+Command exit code: 0
+
+=== Ansible inventory graph ===
+@all:
+  |--@ungrouped:
+  |--@chss_week14:
+  |  |--localhost
+Command exit code: 0
+
+=== Ansible playbook syntax check ===
+
+playbook: week14_provision.yml
+Command exit code: 0
+
+=== B. First provisioning and stable deployment ===
+
+PLAY [Provision and verify the isolated CHSS Week 14 release] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Require a Debian-family Linux target] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Inspect any existing Week 14 container without changing it] **************
+ok: [localhost]
+
+TASK [Refuse to replace a container not managed by Week 14] ********************
+skipping: [localhost]
+
+TASK [Ensure host prerequisites are installed] *********************************
+ok: [localhost]
+
+TASK [Ensure Docker Engine is enabled and running] *****************************
+ok: [localhost]
+
+TASK [Deploy the requested CHSS image to the isolated Week 14 port] ************
+changed: [localhost]
+
+TASK [Wait for the CHSS login endpoint to return HTTP 200] *********************
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (45 retries left).
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (44 retries left).
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (43 retries left).
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+
+Command exit code: 0
+
+=== C. First deployment container verification ===
+ID=73586abc7a6a IMAGE=jyotsnakasi/chss-app:build-20 STATUS=Up 1 second PORTS=0.0.0.0:18084->8081/tcp NAMES=chss-week14
+Name=/chss-week14 Image=jyotsnakasi/chss-app:build-20 ImageID=sha256:36a23bd53295ec2f1f0168bcc579aca7bc4b895b340985a9340991421face45e Status=running Running=true Ports={"8081/tcp":[{"HostIp":"0.0.0.0","HostPort":"18084"}]} Labels={"com.chss.application":"community-health-survey-system","com.chss.managed-by":"ansible-week14","com.chss.release-image":"jyotsnakasi/chss-app:build-20","org.opencontainers.image.version":"22.04"}
+2026-10-08T09:15:23.076Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Starting CommunityHealthSurveyApplication v0.1.0 using Java 17.0.20.1 with PID 1 (/app/app.war started by chss in /app)
+2026-10-08T09:15:24.832Z  INFO 1 --- [community-health-survey] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-10-08T09:15:27.655Z  INFO 1 --- [community-health-survey] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
+2026-10-08T09:15:27.693Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Started CommunityHealthSurveyApplication in 5.374 seconds (process running for 6.476)
+2026-10-08T09:16:25.304Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Starting CommunityHealthSurveyApplication v0.1.0 using Java 17.0.20.1 with PID 1 (/app/app.war started by chss in /app)
+2026-10-08T09:16:27.072Z  INFO 1 --- [community-health-survey] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-10-08T09:16:29.887Z  INFO 1 --- [community-health-survey] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
+2026-10-08T09:16:29.910Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Started CommunityHealthSurveyApplication in 5.33 seconds (process running for 6.389)
+2026-10-08T09:17:23.651Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Starting CommunityHealthSurveyApplication v0.1.0 using Java 17.0.20.1 with PID 1 (/app/app.war started by chss in /app)
+Command exit code: 0
+
+=== E. Second Ansible execution (idempotency) ===
+
+PLAY [Provision and verify the isolated CHSS Week 14 release] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Require a Debian-family Linux target] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Inspect any existing Week 14 container without changing it] **************
+ok: [localhost]
+
+TASK [Refuse to replace a container not managed by Week 14] ********************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Ensure host prerequisites are installed] *********************************
+ok: [localhost]
+
+TASK [Ensure Docker Engine is enabled and running] *****************************
+ok: [localhost]
+
+TASK [Deploy the requested CHSS image to the isolated Week 14 port] ************
+ok: [localhost]
+
+TASK [Wait for the CHSS login endpoint to return HTTP 200] *********************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+Command exit code: 0
+
+=== D. First HTTP health check ===
+HTTP 200
+Command exit code: 0
+
+=== F. Build an actual image from the current committed source revision ===
+Stage failed: DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+
+=== E1. Manage the Docker Buildx build prerequisite ===
+
+PLAY [Provision and verify the isolated CHSS Week 14 release] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Require a Debian-family Linux target] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Inspect any existing Week 14 container without changing it] **************
+ok: [localhost]
+
+TASK [Refuse to replace a container not managed by Week 14] ********************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Ensure host prerequisites and Docker build tooling are installed] ********
+changed: [localhost]
+
+TASK [Ensure Docker Engine is enabled and running] *****************************
+ok: [localhost]
+
+TASK [Deploy the requested CHSS image to the isolated Week 14 port] ************
+ok: [localhost]
+
+TASK [Wait for the CHSS login endpoint to return HTTP 200] *********************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+Command exit code: 0
+
+=== Docker Buildx prerequisite diagnosis ===
+The first candidate-build stage ended when PowerShell promoted the Docker CLI's
+legacy-builder deprecation notice to a terminating error. The candidate build
+did not produce a recorded successful image. The following read-only diagnostic
+commands were run against the Ubuntu Docker CLI before changing the playbook:
+
+> docker buildx version
+docker: unknown command: docker buildx
+
+Run 'docker --help' for more information
+
+> apt-cache policy docker-buildx
+docker-buildx:
+  Installed: (none)
+  Candidate: 0.30.1-0ubuntu1
+  Version table:
+     0.30.1-0ubuntu1 500
+        500 http://archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+
+Resolution: added Ubuntu's docker-buildx package to the Ansible-managed host
+package list and changed the build command to use docker buildx build --load.
+The updated playbook's actual installation run is recorded in section E1 above.
+
+=== E2. Post-prerequisite idempotency check ===
+
+PLAY [Provision and verify the isolated CHSS Week 14 release] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Require a Debian-family Linux target] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Inspect any existing Week 14 container without changing it] **************
+ok: [localhost]
+
+TASK [Refuse to replace a container not managed by Week 14] ********************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Ensure host prerequisites and Docker build tooling are installed] ********
+ok: [localhost]
+
+TASK [Ensure Docker Engine is enabled and running] *****************************
+ok: [localhost]
+
+TASK [Deploy the requested CHSS image to the isolated Week 14 port] ************
+ok: [localhost]
+
+TASK [Wait for the CHSS login endpoint to return HTTP 200] *********************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+Command exit code: 0
+
+=== F. Build an actual image from the current committed source revision ===
+github.com/docker/buildx 0.30.1 0.30.1-0ubuntu1
+#0 building with "default" instance using docker driver
+System.Management.Automation.RemoteException
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 694B done
+#1 DONE 0.1s
+System.Management.Automation.RemoteException
+#2 [internal] load metadata for docker.io/library/eclipse-temurin:17-jre-jammy
+#2 DONE 2.5s
+System.Management.Automation.RemoteException
+#3 [internal] load metadata for docker.io/library/maven:3.9.9-eclipse-temurin-17
+#3 DONE 2.5s
+System.Management.Automation.RemoteException
+#4 [internal] load .dockerignore
+#4 transferring context: 109B done
+#4 DONE 0.1s
+System.Management.Automation.RemoteException
+#5 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:17-jre-jammy@sha256:8993f1aed8b25fcea7a7047a7949c1866fa558fc6830d938c22c4f13b26be9d7
+#5 resolve docker.io/library/eclipse-temurin:17-jre-jammy@sha256:8993f1aed8b25fcea7a7047a7949c1866fa558fc6830d938c22c4f13b26be9d7 0.1s done
+#5 ...
+System.Management.Automation.RemoteException
+#6 [internal] load build context
+#6 transferring context: 48.28kB done
+#6 DONE 0.2s
+System.Management.Automation.RemoteException
+#5 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:17-jre-jammy@sha256:8993f1aed8b25fcea7a7047a7949c1866fa558fc6830d938c22c4f13b26be9d7
+#5 DONE 0.6s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 resolve docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc 0.1s done
+#7 ...
+System.Management.Automation.RemoteException
+#8 [stage-1 2/4] WORKDIR /app
+#8 DONE 0.2s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 sha256:955067be877db9298a5676257b42553507c2cf1129b9e626033e2d48c33577e7 0B / 155B 0.2s
+#7 sha256:955067be877db9298a5676257b42553507c2cf1129b9e626033e2d48c33577e7 155B / 155B 0.3s
+#7 sha256:3fa0bcda0f1da02f4ec2a7978b9d08b534ab12742726582ba3908e70f0329ffc 0B / 848B 0.2s
+#7 sha256:2d56ad71dc3b91726c3f2ceaa3a5917bddafd133435af8f5b444a4f3e690492b 0B / 359B 0.2s
+#7 sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 0B / 9.17MB 0.2s
+#7 sha256:955067be877db9298a5676257b42553507c2cf1129b9e626033e2d48c33577e7 155B / 155B 0.3s done
+#7 ...
+System.Management.Automation.RemoteException
+#9 [stage-1 3/4] RUN groupadd --system chss     && useradd --system --gid chss --home-dir /app --shell /usr/sbin/nologin chss
+#9 DONE 0.6s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 0B / 22.54MB 0.2s
+#7 sha256:3fa0bcda0f1da02f4ec2a7978b9d08b534ab12742726582ba3908e70f0329ffc 848B / 848B 0.6s done
+#7 sha256:2d56ad71dc3b91726c3f2ceaa3a5917bddafd133435af8f5b444a4f3e690492b 359B / 359B 0.7s done
+#7 sha256:d9815e77b54f33dbcd213d596eeaad209e5255afa9c22666ba991c8c1daf1211 0B / 2.28kB 0.2s
+#7 sha256:c70eff9bffbbfe89f4317fcbc629c8b55f368a6376f739f347d783caf8d2fe79 0B / 160B 0.2s
+#7 sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 1.05MB / 9.17MB 1.1s
+#7 sha256:d9815e77b54f33dbcd213d596eeaad209e5255afa9c22666ba991c8c1daf1211 2.28kB / 2.28kB 0.5s done
+#7 sha256:c70eff9bffbbfe89f4317fcbc629c8b55f368a6376f739f347d783caf8d2fe79 160B / 160B 0.4s done
+#7 sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 4.19MB / 9.17MB 1.2s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 0B / 144.65MB 0.2s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 0B / 22.95MB 0.2s
+#7 sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 5.24MB / 9.17MB 1.4s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 2.10MB / 22.54MB 1.2s
+#7 sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 7.34MB / 9.17MB 1.5s
+#7 sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 9.17MB / 9.17MB 1.7s done
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 4.19MB / 22.54MB 1.5s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 6.29MB / 22.54MB 1.7s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 0B / 29.72MB 0.2s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 9.44MB / 22.54MB 2.0s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 2.10MB / 29.72MB 0.6s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 11.53MB / 22.54MB 2.3s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 2.10MB / 22.95MB 1.4s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 4.19MB / 29.72MB 0.8s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 13.63MB / 22.54MB 2.6s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 6.29MB / 29.72MB 1.1s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 15.73MB / 22.54MB 2.9s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 8.39MB / 29.72MB 1.5s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 17.83MB / 22.54MB 3.2s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 11.53MB / 29.72MB 1.8s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 19.92MB / 22.54MB 3.5s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 4.19MB / 22.95MB 2.6s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 13.63MB / 29.72MB 2.1s
+#7 sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 22.54MB / 22.54MB 3.8s done
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 7.34MB / 144.65MB 2.9s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 17.83MB / 29.72MB 2.4s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 19.92MB / 29.72MB 2.6s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 6.29MB / 22.95MB 3.5s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 23.07MB / 29.72MB 2.9s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 25.17MB / 29.72MB 3.0s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 27.26MB / 29.72MB 3.2s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 8.39MB / 22.95MB 3.9s
+#7 sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 29.72MB / 29.72MB 3.3s done
+#7 extracting sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 15.73MB / 144.65MB 4.2s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 11.53MB / 22.95MB 4.4s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 24.12MB / 144.65MB 4.8s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 13.63MB / 22.95MB 4.7s
+#7 extracting sha256:d9d352c11bbd3880007953ed6eec1cbace76898828f3434984a0ca60672fdf5a 0.7s done
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 15.73MB / 22.95MB 4.8s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 17.83MB / 22.95MB 5.3s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 31.46MB / 144.65MB 5.9s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 19.92MB / 22.95MB 5.9s
+#7 sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 22.95MB / 22.95MB 6.4s done
+#7 extracting sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 40.89MB / 144.65MB 6.6s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 49.28MB / 144.65MB 7.1s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 56.62MB / 144.65MB 7.5s
+#7 extracting sha256:7bbafedfaf521e89144400b08c3dbacde18a658508d1b700f2b98bf123959ebe 1.5s done
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 63.96MB / 144.65MB 8.0s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 74.45MB / 144.65MB 8.4s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 81.79MB / 144.65MB 8.7s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 92.27MB / 144.65MB 9.3s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 99.61MB / 144.65MB 9.6s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 108.00MB / 144.65MB 9.9s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 115.34MB / 144.65MB 10.2s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 123.73MB / 144.65MB 10.5s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 132.12MB / 144.65MB 10.8s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 140.51MB / 144.65MB 11.1s
+#7 sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 144.65MB / 144.65MB 11.6s done
+#7 extracting sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028
+#7 extracting sha256:b61b7669ae30b45ca88696ba9b505614969b7b22fcfbc0131aafe11a21cf6028 1.1s done
+#7 DONE 14.6s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 extracting sha256:c70eff9bffbbfe89f4317fcbc629c8b55f368a6376f739f347d783caf8d2fe79 0.0s done
+#7 extracting sha256:d9815e77b54f33dbcd213d596eeaad209e5255afa9c22666ba991c8c1daf1211 0.0s done
+#7 extracting sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67
+#7 extracting sha256:ddcf5fb2d06ceba3ca7015c4e844c4ff884ef85f4b22be6bde29e1c3a9b5be67 0.5s done
+#7 DONE 15.2s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 extracting sha256:e778c13590fd085adef1b77b7188d40026e1c681d1b51f982519a3cc79faa4c5 0.1s done
+#7 extracting sha256:3fa0bcda0f1da02f4ec2a7978b9d08b534ab12742726582ba3908e70f0329ffc 0.0s done
+#7 DONE 15.3s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 extracting sha256:2d56ad71dc3b91726c3f2ceaa3a5917bddafd133435af8f5b444a4f3e690492b 0.0s done
+#7 extracting sha256:955067be877db9298a5676257b42553507c2cf1129b9e626033e2d48c33577e7 0.0s done
+#7 DONE 15.4s
+System.Management.Automation.RemoteException
+#10 [build 2/5] WORKDIR /workspace
+#10 DONE 1.2s
+System.Management.Automation.RemoteException
+#11 [build 3/5] COPY pom.xml ./pom.xml
+#11 DONE 0.1s
+System.Management.Automation.RemoteException
+#12 [build 4/5] COPY src ./src
+#12 DONE 0.1s
+System.Management.Automation.RemoteException
+#13 [build 5/5] RUN mvn --batch-mode --no-transfer-progress -DskipTests package     && test -s target/community-health-survey.war
+#13 1.384 [INFO] Scanning for projects...
+#13 4.922 [INFO]
+#13 4.922 [INFO] ------------------< com.chss:community-health-survey >------------------
+#13 4.922 [INFO] Building community-health-survey 0.1.0
+#13 4.922 [INFO]   from pom.xml
+#13 4.922 [INFO] --------------------------------[ war ]---------------------------------
+#13 21.73 [INFO]
+#13 21.73 [INFO] --- resources:3.3.1:resources (default-resources) @ community-health-survey ---
+#13 22.79 [INFO] Copying 2 resources from src/main/resources to target/classes
+#13 22.80 [INFO] Copying 6 resources from src/main/resources to target/classes
+#13 22.80 [INFO]
+#13 22.80 [INFO] --- compiler:3.11.0:compile (default-compile) @ community-health-survey ---
+#13 24.14 [INFO] Changes detected - recompiling the module! :source
+#13 24.14 [INFO] Compiling 15 source files with javac [debug release 17] to target/classes
+#13 24.98 [INFO]
+#13 24.98 [INFO] --- resources:3.3.1:testResources (default-testResources) @ community-health-survey ---
+#13 24.98 [INFO] skip non existing resourceDirectory /workspace/src/test/resources
+#13 24.98 [INFO]
+#13 24.98 [INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ community-health-survey ---
+#13 24.99 [INFO] Changes detected - recompiling the module! :dependency
+#13 24.99 [INFO] Compiling 7 source files with javac [debug release 17] to target/test-classes
+#13 25.43 [INFO]
+#13 25.43 [INFO] --- surefire:3.1.2:test (default-test) @ community-health-survey ---
+#13 28.23 [INFO] Tests are skipped.
+#13 28.23 [INFO]
+#13 28.23 [INFO] --- war:3.4.0:war (default-war) @ community-health-survey ---
+#13 30.85 [INFO] Packaging webapp
+#13 30.85 [INFO] Assembling webapp [community-health-survey] in [/workspace/target/community-health-survey]
+#13 30.86 [INFO] Processing war project
+#13 30.99 [INFO] Building war: /workspace/target/community-health-survey.war
+#13 31.40 [INFO]
+#13 31.40 [INFO] --- spring-boot:3.2.5:repackage (repackage) @ community-health-survey ---
+#13 34.26 [INFO] Replacing main artifact /workspace/target/community-health-survey.war with repackaged archive, adding nested dependencies in BOOT-INF/.
+#13 34.26 [INFO] The original artifact has been renamed to /workspace/target/community-health-survey.war.original
+#13 34.26 [INFO] ------------------------------------------------------------------------
+#13 34.26 [INFO] BUILD SUCCESS
+#13 34.26 [INFO] ------------------------------------------------------------------------
+#13 34.27 [INFO] Total time:  32.900 s
+#13 34.27 [INFO] Finished at: 2026-10-08T09:41:26Z
+#13 34.27 [INFO] ------------------------------------------------------------------------
+#13 DONE 35.5s
+System.Management.Automation.RemoteException
+#14 [stage-1 4/4] COPY --from=build --chown=chss:chss /workspace/target/community-health-survey.war /app/app.war
+#14 DONE 0.3s
+System.Management.Automation.RemoteException
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 1.5s done
+#15 exporting manifest sha256:bb4530b4acdb331223a10af75c64be89d511e9481fb803bdb009b5f051cb5aab 0.0s done
+#15 exporting config sha256:1b75292116f9bc1318e0aebadd3883b8f73a26105508f60da31414e6502e8736 0.0s done
+#15 exporting attestation manifest sha256:141772fa3ccebf92e63f5dda1f7f2cc4b9d889bfd6f96cf29cc1f4e938302ec1
+#15 exporting attestation manifest sha256:141772fa3ccebf92e63f5dda1f7f2cc4b9d889bfd6f96cf29cc1f4e938302ec1 0.1s done
+#15 exporting manifest list sha256:dd4b04c6771c3f95e8ecb80bdbf3817a5f2a657a076cd86db5ad4d691e8936f7 0.0s done
+#15 naming to docker.io/local/chss-app:git-d7560b59fc5d
+#15 naming to docker.io/local/chss-app:git-d7560b59fc5d done
+#15 unpacking to docker.io/local/chss-app:git-d7560b59fc5d
+#15 unpacking to docker.io/local/chss-app:git-d7560b59fc5d 0.4s done
+#15 DONE 2.2s
+template parsing error: template: :1: function "org" not defined
+Command exit code: 64
+Stage failed: F. Build an actual image from the current committed source revision failed with exit code 64.
+
+=== F. Build an actual image from the current committed source revision ===
+github.com/docker/buildx 0.30.1 0.30.1-0ubuntu1
+#0 building with "default" instance using docker driver
+System.Management.Automation.RemoteException
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 694B done
+#1 DONE 0.0s
+System.Management.Automation.RemoteException
+#2 [internal] load metadata for docker.io/library/maven:3.9.9-eclipse-temurin-17
+#2 DONE 0.8s
+System.Management.Automation.RemoteException
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:17-jre-jammy
+#3 DONE 0.9s
+System.Management.Automation.RemoteException
+#4 [internal] load .dockerignore
+#4 transferring context:
+#4 transferring context: 109B done
+#4 DONE 0.0s
+System.Management.Automation.RemoteException
+#5 [internal] load build context
+#5 DONE 0.0s
+System.Management.Automation.RemoteException
+#6 [stage-1 1/4] FROM docker.io/library/eclipse-temurin:17-jre-jammy@sha256:8993f1aed8b25fcea7a7047a7949c1866fa558fc6830d938c22c4f13b26be9d7
+#6 resolve docker.io/library/eclipse-temurin:17-jre-jammy@sha256:8993f1aed8b25fcea7a7047a7949c1866fa558fc6830d938c22c4f13b26be9d7 0.1s done
+#6 DONE 0.1s
+System.Management.Automation.RemoteException
+#7 [build 1/5] FROM docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc
+#7 resolve docker.io/library/maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc 0.1s done
+#7 DONE 0.1s
+System.Management.Automation.RemoteException
+#5 [internal] load build context
+#5 transferring context: 2.86kB done
+#5 DONE 0.0s
+System.Management.Automation.RemoteException
+#8 [stage-1 2/4] WORKDIR /app
+#8 CACHED
+System.Management.Automation.RemoteException
+#9 [build 4/5] COPY src ./src
+#9 CACHED
+System.Management.Automation.RemoteException
+#10 [stage-1 3/4] RUN groupadd --system chss     && useradd --system --gid chss --home-dir /app --shell /usr/sbin/nologin chss
+#10 CACHED
+System.Management.Automation.RemoteException
+#11 [build 2/5] WORKDIR /workspace
+#11 CACHED
+System.Management.Automation.RemoteException
+#12 [build 3/5] COPY pom.xml ./pom.xml
+#12 CACHED
+System.Management.Automation.RemoteException
+#13 [build 5/5] RUN mvn --batch-mode --no-transfer-progress -DskipTests package     && test -s target/community-health-survey.war
+#13 CACHED
+System.Management.Automation.RemoteException
+#14 [stage-1 4/4] COPY --from=build --chown=chss:chss /workspace/target/community-health-survey.war /app/app.war
+#14 CACHED
+System.Management.Automation.RemoteException
+#15 exporting to image
+#15 exporting layers done
+#15 exporting manifest sha256:bb4530b4acdb331223a10af75c64be89d511e9481fb803bdb009b5f051cb5aab done
+#15 exporting config sha256:1b75292116f9bc1318e0aebadd3883b8f73a26105508f60da31414e6502e8736 done
+#15 exporting attestation manifest sha256:016ba698309cc817ac23fc0a3c2218158e19bd787e54b8299bcff8692252ac8e
+#15 exporting attestation manifest sha256:016ba698309cc817ac23fc0a3c2218158e19bd787e54b8299bcff8692252ac8e 0.1s done
+#15 exporting manifest list sha256:fe893169cd4b7e31dd212725b0af72f105ea1cac81711b9580a002d74c6db72e 0.0s done
+#15 naming to docker.io/local/chss-app:git-d7560b59fc5d
+#15 naming to docker.io/local/chss-app:git-d7560b59fc5d done
+#15 unpacking to docker.io/local/chss-app:git-d7560b59fc5d 0.0s done
+#15 DONE 0.2s
+Tags=[local/chss-app:git-d7560b59fc5d] ID=sha256:fe893169cd4b7e31dd212725b0af72f105ea1cac81711b9580a002d74c6db72e Labels=map[org.opencontainers.image.revision:d7560b59fc5df0eaa1331936c9b7a236b7f48abc org.opencontainers.image.version:22.04]
+Command exit code: 0
+
+=== G. Deploy the locally built commit-specific candidate ===
+
+PLAY [Provision and verify the isolated CHSS Week 14 release] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Require a Debian-family Linux target] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Inspect any existing Week 14 container without changing it] **************
+ok: [localhost]
+
+TASK [Refuse to replace a container not managed by Week 14] ********************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Ensure host prerequisites and Docker build tooling are installed] ********
+ok: [localhost]
+
+TASK [Ensure Docker Engine is enabled and running] *****************************
+ok: [localhost]
+
+TASK [Deploy the requested CHSS image to the isolated Week 14 port] ************
+changed: [localhost]
+
+TASK [Wait for the CHSS login endpoint to return HTTP 200] *********************
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (45 retries left).
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (44 retries left).
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (43 retries left).
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+Command exit code: 0
+
+=== H. Verify candidate image and application response ===
+Name=/chss-week14 Image=local/chss-app:git-d7560b59fc5d ImageID=sha256:fe893169cd4b7e31dd212725b0af72f105ea1cac81711b9580a002d74c6db72e Status=running Running=true
+HTTP 200
+Command exit code: 0
+
+=== I. Roll back to the previous stable Week 12 image ===
+
+PLAY [Provision and verify the isolated CHSS Week 14 release] ******************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Require a Debian-family Linux target] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Inspect any existing Week 14 container without changing it] **************
+ok: [localhost]
+
+TASK [Refuse to replace a container not managed by Week 14] ********************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Ensure host prerequisites and Docker build tooling are installed] ********
+ok: [localhost]
+
+TASK [Ensure Docker Engine is enabled and running] *****************************
+ok: [localhost]
+
+TASK [Deploy the requested CHSS image to the isolated Week 14 port] ************
+changed: [localhost]
+
+TASK [Wait for the CHSS login endpoint to return HTTP 200] *********************
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (45 retries left).
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (44 retries left).
+FAILED - RETRYING: [localhost]: Wait for the CHSS login endpoint to return HTTP 200 (43 retries left).
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+Command exit code: 0
+
+=== J. Verify stable recovery, startup logs, and endpoint ===
+ID=fde9f4e3a4eb IMAGE=jyotsnakasi/chss-app:build-20 STATUS=Up 32 seconds PORTS=0.0.0.0:18084->8081/tcp NAMES=chss-week14
+Name=/chss-week14 Image=jyotsnakasi/chss-app:build-20 ImageID=sha256:36a23bd53295ec2f1f0168bcc579aca7bc4b895b340985a9340991421face45e Status=running Running=true Labels={"com.chss.application":"community-health-survey-system","com.chss.managed-by":"ansible-week14","com.chss.release-image":"jyotsnakasi/chss-app:build-20","org.opencontainers.image.version":"22.04"}
+2026-10-08T09:44:29.240Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Starting CommunityHealthSurveyApplication v0.1.0 using Java 17.0.20.1 with PID 1 (/app/app.war started by chss in /app)
+2026-10-08T09:44:30.984Z  INFO 1 --- [community-health-survey] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-10-08T09:44:34.487Z  INFO 1 --- [community-health-survey] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
+2026-10-08T09:44:34.508Z  INFO 1 --- [community-health-survey] [           main] c.chss.CommunityHealthSurveyApplication  : Started CommunityHealthSurveyApplication in 5.822 seconds (process running for 6.453)
+HTTP 200
+Command exit code: 0
