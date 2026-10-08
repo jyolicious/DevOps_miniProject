@@ -1,45 +1,210 @@
-Week 13 first execution log
+Week 13 Ansible execution log
 Date: 2026-10-08 (Asia/Calcutta)
-Working directory: community-health-survey/chss/ansible
+Project: Community Health Survey System
+Target: Ubuntu 26.04.1 LTS (WSL2), local Ansible connection
 
-Target discovery (actual commands and results)
-> wsl --list --verbose
-  NAME             STATE    VERSION
-* docker-desktop   Stopped  2
-
-> docker info --format '{{.ServerVersion}}'
-  Docker CLI could not connect to the Docker Desktop Linux Engine (named pipe unavailable).
-
-> Get-Command ansible-playbook -ErrorAction SilentlyContinue
-  No command found.
-
-First playbook execution attempt
-> ansible-playbook -i inventory.ini site.yml
-  ansible-playbook : The term 'ansible-playbook' is not recognized as the name of a cmdlet, function, script file, or operable program.
-  Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-  At line:2 char:1
-  + ansible-playbook -i inventory.ini site.yml
-  + ~~~~~~~~~~~~~~~~
-      + CategoryInfo          : ObjectNotFound: (ansible-playbook:String) [], CommandNotFoundException
-      + FullyQualifiedErrorId : CommandNotFoundException
-
-Result: BLOCKED BEFORE PLAYBOOK EXECUTION. WSL has no Ubuntu/Linux application target (only the stopped Docker Desktop internal distribution), and Docker Engine is stopped. No host was provisioned, no successful Ansible output is claimed, and no CHSS endpoint or second-run idempotency check was possible. The inventory remains empty rather than naming an invented node. Run this playbook from a supported Ansible controller after adding the actual Debian/Ubuntu Docker host.
-
-Security: This log contains no passwords, tokens, connection credentials, or application secrets.
-
-Follow-up environment re-check after Docker Desktop was started
-Date: 2026-10-08 (Asia/Calcutta)
-
+Environment discovery and setup
 > wsl --list --verbose
   NAME             STATE    VERSION
 * docker-desktop   Running  2
 
-> docker info --format 'Engine={{.ServerVersion}} OS={{.OperatingSystem}}'
-  Engine=29.7.2 OS=Docker Desktop
+> wsl --install --distribution Ubuntu --no-launch
+  Downloading: Ubuntu
+  Installing: Ubuntu
+  Distribution successfully installed. It can be launched via 'wsl.exe -d Ubuntu'
 
-> wsl -d docker-desktop -- sh -lc 'for c in python3 apk apt-get rpm systemctl rc-service sshd busybox; do command -v "$c" || true; done; printf "init="; cat /proc/1/comm; cat /etc/os-release'
-  No listed Python, package manager, service manager, SSH server, or BusyBox executable was found on PATH.
-  init=init(docker-des)
-  PRETTY_NAME="Docker Desktop"
+> wsl -d Ubuntu -u root --exec bash -lc 'id; cat /etc/os-release; ...'
+  uid=0(root) gid=0(root) groups=0(root)
+  PRETTY_NAME="Ubuntu 26.04.1 LTS"
+  init=systemd
+  /usr/bin/python3
+  /usr/bin/apt-get
+  /usr/bin/systemctl
+  /usr/sbin/service
 
-Assessment: Docker Desktop now runs, but its internal distro is not a manageable Debian/Ubuntu server and cannot satisfy the play's Ansible module, apt, and service requirements. Existing Docker containers were left untouched. Ansible remains unavailable on the Windows controller. No further playbook execution was possible, and no target was fabricated.
+> wsl -d Ubuntu -u root --exec apt-get update
+  Fetched 32.0 MB in 11s (2992 kB/s)
+  Reading package lists...
+
+> wsl -d Ubuntu -u root --exec apt-get install -y ansible-core
+  Setting up ansible-core (2.20.1-1) ...
+  Setting up ansible (13.1.0+dfsg-1ubuntu1) ...
+
+> ansible --version
+  ansible [core 2.20.1]
+    config file = None
+    configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+    ansible python module location = /usr/lib/python3/dist-packages/ansible
+    executable location = /usr/bin/ansible
+    python version = 3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0] (/usr/bin/python3)
+
+Initial Windows-only attempt before WSL Ubuntu was installed
+> ansible-playbook -i inventory.ini site.yml
+  ansible-playbook : The term 'ansible-playbook' is not recognized as the name of a cmdlet, function, script file, or operable program.
+  FullyQualifiedErrorId : CommandNotFoundException
+
+This initial attempt did not execute the playbook. The successful runs below are the real Ubuntu/Ansible executions.
+
+Inventory and syntax validation
+> ansible-inventory -i inventory.ini --list
+  {
+      "_meta": {
+          "hostvars": {
+              "localhost": {
+                  "ansible_connection": "local",
+                  "ansible_python_interpreter": "/usr/bin/python3"
+              }
+          }
+      },
+      "chss_servers": {
+          "hosts": ["localhost"]
+      }
+  }
+
+> ansible-playbook -i inventory.ini site.yml --syntax-check
+  playbook: site.yml
+
+FIRST SUCCESSFUL PLAYBOOK EXECUTION
+> ansible-playbook -i inventory.ini site.yml
+
+  PLAY [Configure prerequisites on the CHSS Docker deployment host] **************
+
+  TASK [Gathering Facts] *********************************************************
+  ok: [localhost]
+
+  TASK [Require a Debian-family Linux target] ************************************
+  [WARNING]: Deprecation warnings can be disabled by setting `deprecation_warnings=False` in ansible.cfg.
+  [DEPRECATION WARNING]: INJECT_FACTS_AS_VARS default to `True` is deprecated, top-level facts will not be auto injected after the change. This feature will be removed from ansible-core version 2.24.
+  Origin: /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/site.yml:19:13
+  Use `ansible_facts["fact_name"]` (no `ansible_` prefix) instead.
+  ok: [localhost] => {
+      "changed": false,
+      "msg": "All assertions passed"
+  }
+
+  TASK [Install Docker and host verification prerequisites] **********************
+  changed: [localhost]
+
+  TASK [Enable and start Docker Engine] ******************************************
+  ok: [localhost]
+
+  TASK [Read Docker Engine version] **********************************************
+  ok: [localhost]
+
+  TASK [Confirm Docker Engine is available] *************************************
+  ok: [localhost] => {
+      "changed": false,
+      "msg": "All assertions passed"
+  }
+
+  TASK [Check the CHSS deployment endpoint when an app is already deployed] ******
+  skipping: [localhost]
+
+  TASK [Report application endpoint verification mode] **************************
+  ok: [localhost] => {
+      "msg": "CHSS endpoint http://127.0.0.1:18082/login was not checked because no application deployment was requested."
+  }
+
+  PLAY RECAP *********************************************************************
+  localhost : ok=7 changed=1 unreachable=0 failed=0 skipped=1 rescued=0 ignored=0
+
+The first run succeeded. Its deprecation warning was corrected by using `ansible_facts.os_family`; the play was updated to avoid redundant become on the root local connection.
+
+SECOND EXECUTION (IDEMPOTENCY CHECK)
+> ansible-inventory -i inventory.ini --list && ansible-playbook -i inventory.ini site.yml --syntax-check && ansible-playbook -i inventory.ini site.yml
+
+  playbook: site.yml
+
+  PLAY [Configure prerequisites on the CHSS Docker deployment host] **************
+  TASK [Gathering Facts] *********************************************************
+  ok: [localhost]
+  TASK [Require a Debian-family Linux target] ************************************
+  ok: [localhost] => {"changed": false, "msg": "All assertions passed"}
+  TASK [Install Docker and host verification prerequisites] **********************
+  ok: [localhost]
+  TASK [Enable and start Docker Engine] ******************************************
+  ok: [localhost]
+  TASK [Read Docker Engine version] **********************************************
+  ok: [localhost]
+  TASK [Confirm Docker Engine is available] *************************************
+  ok: [localhost] => {"changed": false, "msg": "All assertions passed"}
+  TASK [Check the CHSS deployment endpoint when an app is already deployed] ******
+  skipping: [localhost]
+  TASK [Report application endpoint verification mode] **************************
+  ok: [localhost] => {"msg": "CHSS endpoint http://127.0.0.1:18082/login was not checked because no application deployment was requested."}
+
+  PLAY RECAP *********************************************************************
+  localhost : ok=7 changed=0 unreachable=0 failed=0 skipped=1 rescued=0 ignored=0
+
+Post-run target verification
+> systemctl is-active docker
+  active
+
+> systemctl is-enabled docker
+  enabled
+
+> docker version --format 'Client={{.Client.Version}} Server={{.Server.Version}}'
+  Client=29.1.3 Server=29.1.3
+
+> dpkg-query -W docker.io ca-certificates python3
+  ca-certificates  20260601~26.04.1
+  docker.io        29.1.3-0ubuntu4.1
+  python3          3.14.3-0ubuntu2
+
+> id -un
+  root
+
+> getent passwd chss
+  (no output; no unnecessary host chss account was created)
+
+Result: syntax and inventory validation passed; first successful run changed the missing host package state; second run changed zero resources. Docker service is enabled/active and its Engine responds. No CHSS application endpoint was checked because this playbook provisions the host and does not deploy an app. No Jenkins job was run. Existing Docker Desktop containers were left untouched. No credentials or secrets are included.
+
+CONTINUATION AUDIT AND REAL EXECUTION (2026-10-08)
+The previously provisioned Ubuntu distribution still exists as a regular WSL2
+distribution, separate from the internal docker-desktop distribution. The
+Windows Python is 3.13.7. Ansible is not on the Windows PATH; Ansible Core
+2.20.1 is installed and runs inside Ubuntu. Docker Desktop's Windows CLI
+reports its separate Engine as 29.7.2.
+
+Validation commands run from PowerShell against the real Ubuntu distribution:
+> wsl -d Ubuntu -u root --exec /usr/bin/ansible-inventory -i /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/inventory.ini --graph
+  @all:
+    |--@ungrouped:
+    |--@chss_servers:
+    |  |--localhost
+
+> wsl -d Ubuntu -u root --exec /usr/bin/ansible-playbook -i /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/inventory.ini /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/site.yml --syntax-check
+  playbook: /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/site.yml
+
+CONTINUATION PLAYBOOK EXECUTION
+> wsl -d Ubuntu -u root --exec /usr/bin/ansible-playbook -i /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/inventory.ini /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/site.yml
+  PLAY RECAP *********************************************************************
+  localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+
+SECOND CONTINUATION EXECUTION (IDEMPOTENCY RECHECK)
+> wsl -d Ubuntu -u root --exec /usr/bin/ansible-playbook -i /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/inventory.ini /mnt/c/Users/Jyotsna/OneDrive/Desktop/DevOps/MiniProject/community-health-survey/chss/ansible/site.yml
+  PLAY RECAP *********************************************************************
+  localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+
+ACTUAL POST-RUN VERIFICATION
+> systemctl is-active docker
+  active
+> systemctl is-enabled docker
+  enabled
+> docker version --format 'Client={{.Client.Version}} Server={{.Server.Version}}'
+  Client=29.1.3 Server=29.1.3
+> dpkg-query -W -f='${Package} ${Version}\n' ca-certificates docker.io python3
+  ca-certificates 20260601~26.04.1
+  docker.io 29.1.3-0ubuntu4.1
+  python3 3.14.3-0ubuntu2
+> id -un
+  root
+> getent passwd chss
+  (no output; exit status 2, as no host chss account is configured)
+
+Continuation result: both actual re-runs completed successfully with zero
+changes. Inventory and syntax validation passed. Docker is active and enabled
+on the Ubuntu target. No CHSS app endpoint was tested because no CHSS app was
+deployed on this independent Ubuntu Docker Engine. No relevant Week 13
+terminal screenshot was captured; unrelated Jenkins and Week 11/12 screenshots
+were not presented as Week 13 evidence.
