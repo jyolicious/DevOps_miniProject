@@ -1,0 +1,69 @@
+---
+- name: Configure prerequisites on the CHSS Docker deployment host
+  hosts: chss_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    chss_host_packages:
+      - ca-certificates
+      - docker.io
+      - python3
+    chss_deployment_port: 18082
+    chss_verify_deployed_app: false
+    chss_app_url: http://127.0.0.1:18082/login
+
+  pre_tasks:
+    - name: Require a Debian-family Linux target
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == "Debian"
+        fail_msg: "CHSS host provisioning currently supports Debian/Ubuntu targets."
+
+  tasks:
+    - name: Install Docker and host verification prerequisites
+      ansible.builtin.apt:
+        name: "{{ chss_host_packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Enable and start Docker Engine
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Read Docker Engine version
+      ansible.builtin.command:
+        argv:
+          - docker
+          - version
+          - --format
+          - "{{ '{{' }}.Server.Version{{ '}}' }}"
+      register: chss_docker_version
+      changed_when: false
+
+    - name: Confirm Docker Engine is available
+      ansible.builtin.assert:
+        that:
+          - chss_docker_version.rc == 0
+          - chss_docker_version.stdout | length > 0
+        fail_msg: "Docker CLI could not contact the Docker Engine."
+
+    - name: Check the CHSS deployment endpoint when an app is already deployed
+      ansible.builtin.uri:
+        url: "{{ chss_app_url }}"
+        method: GET
+        status_code: 200
+        return_content: false
+      when: chss_verify_deployed_app | bool
+
+    - name: Report application endpoint verification mode
+      ansible.builtin.debug:
+        msg: >-
+          CHSS endpoint {{ chss_app_url }} was
+          {{ 'verified' if (chss_verify_deployed_app | bool) else
+          'not checked because no application deployment was requested' }}.
+
+  handlers: []

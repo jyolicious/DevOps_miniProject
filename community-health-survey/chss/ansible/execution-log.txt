@@ -1,0 +1,28 @@
+Week 13 first execution log
+Date: 2026-10-08 (Asia/Calcutta)
+Working directory: community-health-survey/chss/ansible
+
+Target discovery (actual commands and results)
+> wsl --list --verbose
+  NAME             STATE    VERSION
+* docker-desktop   Stopped  2
+
+> docker info --format '{{.ServerVersion}}'
+  Docker CLI could not connect to the Docker Desktop Linux Engine (named pipe unavailable).
+
+> Get-Command ansible-playbook -ErrorAction SilentlyContinue
+  No command found.
+
+First playbook execution attempt
+> ansible-playbook -i inventory.ini site.yml
+  ansible-playbook : The term 'ansible-playbook' is not recognized as the name of a cmdlet, function, script file, or operable program.
+  Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+  At line:2 char:1
+  + ansible-playbook -i inventory.ini site.yml
+  + ~~~~~~~~~~~~~~~~
+      + CategoryInfo          : ObjectNotFound: (ansible-playbook:String) [], CommandNotFoundException
+      + FullyQualifiedErrorId : CommandNotFoundException
+
+Result: BLOCKED BEFORE PLAYBOOK EXECUTION. WSL has no Ubuntu/Linux application target (only the stopped Docker Desktop internal distribution), and Docker Engine is stopped. No host was provisioned, no successful Ansible output is claimed, and no CHSS endpoint or second-run idempotency check was possible. The inventory remains empty rather than naming an invented node. Run this playbook from a supported Ansible controller after adding the actual Debian/Ubuntu Docker host.
+
+Security: This log contains no passwords, tokens, connection credentials, or application secrets.
