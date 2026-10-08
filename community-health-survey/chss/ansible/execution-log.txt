@@ -26,3 +26,20 @@ First playbook execution attempt
 Result: BLOCKED BEFORE PLAYBOOK EXECUTION. WSL has no Ubuntu/Linux application target (only the stopped Docker Desktop internal distribution), and Docker Engine is stopped. No host was provisioned, no successful Ansible output is claimed, and no CHSS endpoint or second-run idempotency check was possible. The inventory remains empty rather than naming an invented node. Run this playbook from a supported Ansible controller after adding the actual Debian/Ubuntu Docker host.
 
 Security: This log contains no passwords, tokens, connection credentials, or application secrets.
+
+Follow-up environment re-check after Docker Desktop was started
+Date: 2026-10-08 (Asia/Calcutta)
+
+> wsl --list --verbose
+  NAME             STATE    VERSION
+* docker-desktop   Running  2
+
+> docker info --format 'Engine={{.ServerVersion}} OS={{.OperatingSystem}}'
+  Engine=29.7.2 OS=Docker Desktop
+
+> wsl -d docker-desktop -- sh -lc 'for c in python3 apk apt-get rpm systemctl rc-service sshd busybox; do command -v "$c" || true; done; printf "init="; cat /proc/1/comm; cat /etc/os-release'
+  No listed Python, package manager, service manager, SSH server, or BusyBox executable was found on PATH.
+  init=init(docker-des)
+  PRETTY_NAME="Docker Desktop"
+
+Assessment: Docker Desktop now runs, but its internal distro is not a manageable Debian/Ubuntu server and cannot satisfy the play's Ansible module, apt, and service requirements. Existing Docker containers were left untouched. Ansible remains unavailable on the Windows controller. No further playbook execution was possible, and no target was fabricated.

@@ -2,7 +2,7 @@
 
 ## Target and scope
 
-The intended managed node is the **Linux Docker deployment host** used by the Week 12 deployment. Inspection on 8 October 2026 found a Windows development machine, WSL2 listing only a stopped internal `docker-desktop` distribution, no Ubuntu distribution, and a Docker CLI that could not connect to the stopped Docker Engine. There was no real, usable Linux CHSS target for this first run. The inventory is therefore an intentionally empty template; it does not invent a host. Add the actual Debian/Ubuntu deployment host to `inventory.ini` before applying the playbook.
+The intended managed node is the **Linux Docker deployment host** used by the Week 12 deployment. On the first run, WSL2 listed only a stopped internal `docker-desktop` distribution and Docker Engine was unavailable. A follow-up check after Docker Desktop started found the distro running and Engine 29.7.2 available, but the internal distro has no Python, package manager, SSH server, or service manager. It cannot run this Debian/Ubuntu package and service playbook. No Ubuntu distribution or real Linux CHSS deployment host is available. The inventory is therefore an intentionally empty template; it does not invent a host. Add the actual Debian/Ubuntu deployment host to `inventory.ini` before applying the playbook.
 
 The Week 12 Docker image already contains the Java 17 runtime and runs the application as its own unprivileged `chss` account. The host needs Docker, not a second Java installation, a host-side CHSS account, Maven, or a separate application service. The build pipeline uses Maven in its build environment. Maven Wrapper files are in the repository; they do not make Maven a deployment-host prerequisite.
 
