@@ -2,48 +2,53 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <title>Survey Record Form</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <header>
-    <div>Community Health Survey System</div>
-    <div>
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Community Health Survey System</span></div>
+    <div class="nav">
         <a th:href="@{/dashboard}">Dashboard</a>
-        <a th:href="@{/surveys}">Records</a>
-        <a th:href="@{/logout}">Logout</a>
+        <a th:href="@{/surveys}" class="active">Records</a>
+        <a class="logout" th:href="@{/logout}">Logout</a>
     </div>
 </header>
 <main>
-    <h1 th:text="${survey.id} != null ? 'Edit Survey Record' : 'New Survey Record'">Survey Record</h1>
-    <form th:action="${survey.id} != null ? '/surveys/' + ${survey.id} : '/surveys'" method="post"
+    <div class="page-head"><h1 th:text="${survey.id} != null ? 'Edit Survey Record' : 'New Survey Record'">Survey Record</h1>
+    <p class="muted">Fields marked with * are required.</p></div>
+    <form class="form-grid" th:action="${survey.id} != null ? '/surveys/' + ${survey.id} : '/surveys'" method="post"
           th:object="${survey}">
         <div>
-            <label>Name</label>
+            <label>Name *</label>
             <input type="text" th:field="*{name}" required/>
         </div>
         <div>
-            <label>Age</label>
+            <label>Age *</label>
             <input type="number" th:field="*{age}" required/>
         </div>
         <div>
-            <label>Gender</label>
+            <label>Gender *</label>
             <input type="text" th:field="*{gender}" required/>
         </div>
         <div>
-            <label>Location</label>
+            <label>Survey Date *</label>
+            <input type="date" th:field="*{surveyDate}" required/>
+        </div>
+        <div class="full">
+            <label>Location *</label>
             <input type="text" th:field="*{location}" required/>
         </div>
-        <div>
+        <div class="full">
             <label>Health Condition</label>
             <input type="text" th:field="*{healthCondition}"/>
         </div>
-        <div>
-            <label>Survey Date</label>
-            <input type="date" th:field="*{surveyDate}" required/>
-        </div>
-        <button type="submit">Save</button>
+        <div class="full"><button type="submit">Save</button></div>
     </form>
 </main>
+<footer>Community Health Survey System &middot; Field data stays confidential. Handle every record with care.</footer>
 </body>
 </html>

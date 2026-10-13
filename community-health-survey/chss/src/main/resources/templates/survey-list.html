@@ -2,25 +2,29 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <title>Survey Records</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <header>
-    <div>Community Health Survey System</div>
-    <div>
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Community Health Survey System</span></div>
+    <div class="nav">
         <a th:href="@{/dashboard}">Dashboard</a>
-        <a th:href="@{/surveys}">Records</a>
-        <a th:href="@{/logout}">Logout</a>
+        <a th:href="@{/surveys}" class="active">Records</a>
+        <a class="logout" th:href="@{/logout}">Logout</a>
     </div>
 </header>
 <main>
-    <h1>Survey Records</h1>
-    <form th:action="@{/surveys}" method="get" style="display:flex; gap:8px; margin-bottom:16px;">
+    <div class="page-head"><h1>Survey Records</h1><p class="muted">Search, open and update household survey entries.</p></div>
+    <form th:action="@{/surveys}" method="get" class="toolbar">
         <input type="text" name="query" placeholder="Search by ID or name" th:value="${query}"/>
         <button type="submit">Search</button>
         <a class="btn" th:href="@{/surveys/new}" style="margin-left:auto;">+ New Record</a>
     </form>
+    <div class="table-wrap">
     <table>
         <thead>
         <tr><th>ID</th><th>Name</th><th>Location</th><th>Status</th><th>Survey Date</th><th></th></tr>
@@ -30,13 +34,15 @@
             <td th:text="${s.id}"></td>
             <td th:text="${s.name}"></td>
             <td th:text="${s.location}"></td>
-            <td th:text="${s.status}"></td>
+            <td><span class="badge" th:classappend="'status-' + ${s.status}" th:text="${s.status}"></span></td>
             <td th:text="${s.surveyDate}"></td>
-            <td><a th:href="@{'/surveys/' + ${s.id}}">View</a></td>
+            <td><a class="link" th:href="@{'/surveys/' + ${s.id}}">View</a></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(surveys)}"><td colspan="6">No records found.</td></tr>
+        <tr th:if="${#lists.isEmpty(surveys)}"><td colspan="6" class="empty">No records found. Try a different name or ID, or add a new record.</td></tr>
         </tbody>
     </table>
+    </div>
 </main>
+<footer>Community Health Survey System &middot; Field data stays confidential. Handle every record with care.</footer>
 </body>
 </html>

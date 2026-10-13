@@ -10,6 +10,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SessionAuthInterceptor())
-                .excludePathPatterns("/login", "/css/**", "/error", "/h2-console/**");
+                .excludePathPatterns("/", "/index.html", "/login", "/css/**", "/error", "/h2-console/**");
     }
 }

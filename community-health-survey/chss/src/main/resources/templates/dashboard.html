@@ -2,29 +2,74 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <title>Dashboard - Community Health Survey System</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <header>
-    <div>Community Health Survey System</div>
-    <div>
-        <a th:href="@{/dashboard}">Dashboard</a>
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Community Health Survey System</span></div>
+    <div class="nav">
+        <a th:href="@{/dashboard}" class="active">Dashboard</a>
         <a th:href="@{/surveys}">Records</a>
-        <span th:if="${currentUser}" th:text="'(' + ${currentUser.username} + ' / ' + ${currentUser.role} + ')'"></span>
-        <a th:href="@{/logout}">Logout</a>
+       <span th:text="${'(' + currentUser.username + ' / ' + currentUser.role + ')'}"></span>
+        <a class="logout" th:href="@{/logout}">Logout</a>
     </div>
 </header>
-<main>
-    <h1>Survey Summary</h1>
+<main class="wide">
+    <section class="hero">
+        <div>
+            <h1>Community health, at a glance</h1>
+            <p>Track every household visit from first draft to verified record, and see where the field team stands today.</p>
+            <a class="btn btn-light" th:href="@{/surveys}">View Survey Records</a>
+        </div>
+        <svg class="pulse" viewBox="0 0 320 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M0 50h70l16-34 24 62 22-46 14 18h174"/></svg>
+    </section>
+
+    <h2 class="section-title">Survey Summary</h2>
     <div class="summary-cards">
-        <div class="card"><div class="count" th:text="${summary['TOTAL']}">0</div><div>Total</div></div>
-        <div class="card"><div class="count" th:text="${summary['DRAFT']}">0</div><div>Draft</div></div>
-        <div class="card"><div class="count" th:text="${summary['SUBMITTED']}">0</div><div>Submitted</div></div>
-        <div class="card"><div class="count" th:text="${summary['VERIFIED']}">0</div><div>Verified</div></div>
-        <div class="card"><div class="count" th:text="${summary['CLOSED']}">0</div><div>Closed</div></div>
+        <div class="card total"><div class="count" th:text="${summary['TOTAL']}">0</div><div>Total</div></div>
+        <div class="card draft"><div class="count" th:text="${summary['DRAFT']}">0</div><div>Draft</div></div>
+        <div class="card submitted"><div class="count" th:text="${summary['SUBMITTED']}">0</div><div>Submitted</div></div>
+        <div class="card verified"><div class="count" th:text="${summary['VERIFIED']}">0</div><div>Verified</div></div>
+        <div class="card closed"><div class="count" th:text="${summary['CLOSED']}">0</div><div>Closed</div></div>
     </div>
-    <p style="margin-top:24px;"><a class="btn" th:href="@{/surveys}">View Survey Records</a></p>
+
+    <h2 class="section-title">Where records stand</h2>
+    <div class="pipeline">
+        <span class="seg draft" th:style="'flex-grow:' + ${summary['DRAFT']}"></span>
+        <span class="seg submitted" th:style="'flex-grow:' + ${summary['SUBMITTED']}"></span>
+        <span class="seg verified" th:style="'flex-grow:' + ${summary['VERIFIED']}"></span>
+        <span class="seg closed" th:style="'flex-grow:' + ${summary['CLOSED']}"></span>
+    </div>
+    <div class="legend">
+        <span><i class="dot draft"></i>Draft</span><span><i class="dot submitted"></i>Submitted</span>
+        <span><i class="dot verified"></i>Verified</span><span><i class="dot closed"></i>Closed</span>
+    </div>
+
+    <div class="two-col">
+        <div class="panel">
+            <h3>How a record moves</h3>
+            <ol class="steps">
+                <li><b>Draft</b><span>Surveyor enters household details.</span></li>
+                <li><b>Submitted</b><span>Record is complete and awaits review.</span></li>
+                <li><b>Verified</b><span>Administrator confirms the data.</span></li>
+                <li><b>Closed</b><span>Record is final and archived.</span></li>
+            </ol>
+        </div>
+        <div class="panel tips">
+            <h3>Field reminders</h3>
+            <ul>
+                <li>Confirm the respondent's name and age before saving.</li>
+                <li>Record the exact location, such as ward or village.</li>
+                <li>Note health conditions in plain, short words.</li>
+                <li>Never share a record outside the survey team.</li>
+            </ul>
+        </div>
+    </div>
 </main>
+<footer>Community Health Survey System &middot; Field data stays confidential. Handle every record with care.</footer>
 </body>
 </html>

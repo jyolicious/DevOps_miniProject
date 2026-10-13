@@ -2,40 +2,49 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <title>Survey Record Detail</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <header>
-    <div>Community Health Survey System</div>
-    <div>
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Community Health Survey System</span></div>
+    <div class="nav">
         <a th:href="@{/dashboard}">Dashboard</a>
-        <a th:href="@{/surveys}">Records</a>
-        <a th:href="@{/logout}">Logout</a>
+        <a th:href="@{/surveys}" class="active">Records</a>
+        <a class="logout" th:href="@{/logout}">Logout</a>
     </div>
 </header>
 <main>
-    <h1 th:text="'Survey #' + ${survey.id}"></h1>
+    <p><a class="link" th:href="@{/surveys}">&larr; Back to records</a></p>
+    <div class="page-head"><h1 th:text="'Survey #' + ${survey.id}"></h1>
+    <span class="badge big" th:classappend="'status-' + ${survey.status}" th:text="${survey.status}"></span></div>
     <p th:if="${error}" class="error" th:text="${error}"></p>
-    <table>
+    <table class="details">
         <tr><th>Name</th><td th:text="${survey.name}"></td></tr>
         <tr><th>Age</th><td th:text="${survey.age}"></td></tr>
         <tr><th>Gender</th><td th:text="${survey.gender}"></td></tr>
         <tr><th>Location</th><td th:text="${survey.location}"></td></tr>
         <tr><th>Health Condition</th><td th:text="${survey.healthCondition}"></td></tr>
         <tr><th>Survey Date</th><td th:text="${survey.surveyDate}"></td></tr>
-        <tr><th>Status</th><td th:text="${survey.status}"></td></tr>
+        <tr><th>Status</th><td><span class="badge" th:classappend="'status-' + ${survey.status}" th:text="${survey.status}"></span></td></tr>
     </table>
 
     <p style="margin-top:16px;"><a class="btn" th:href="@{'/surveys/' + ${survey.id} + '/edit'}">Edit Details</a></p>
 
-    <h2>Change Status (Administrator only)</h2>
-    <form th:action="@{'/surveys/' + ${survey.id} + '/status'}" method="post" style="display:flex; gap:8px;">
-        <select name="target">
-            <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}"></option>
-        </select>
-        <button type="submit">Update Status</button>
-    </form>
+    <div class="panel">
+        <h2>Change Status (Administrator only)</h2>
+        <p class="muted">Records move in order: Draft, Submitted, Verified, Closed.</p>
+        <form th:action="@{'/surveys/' + ${survey.id} + '/status'}" method="post" style="display:flex; gap:8px;">
+            <select name="target">
+                <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}"></option>
+            </select>
+            <button type="submit">Update Status</button>
+        </form>
+    </div>
 </main>
+<footer>Community Health Survey System &middot; Field data stays confidential. Handle every record with care.</footer>
 </body>
 </html>

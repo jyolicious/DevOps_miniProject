@@ -2,12 +2,22 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
     <title>Login - Community Health Survey System</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
-<main style="max-width:400px;">
+<body class="auth">
+<section class="auth-art">
+    <div class="auth-logo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></div>
+    <h2>Healthier communities start with good data.</h2>
+    <p>Record, review and verify household health surveys in one place.</p>
+    <svg class="pulse" viewBox="0 0 320 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M0 50h70l16-34 24 62 22-46 14 18h174"/></svg>
+</section>
+<main class="auth-card">
     <h1>Community Health Survey System</h1>
+    <p class="muted">Log in to continue to your dashboard.</p>
     <p th:if="${error}" class="error" th:text="${error}">Error</p>
     <form th:action="@{/login}" method="post">
         <div>
@@ -18,7 +28,7 @@
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required/>
         </div>
-        <button type="submit">Log In</button>
+        <button type="submit" class="block">Log In</button>
     </form>
 </main>
 </body>
